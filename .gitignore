@@ -1,0 +1,10 @@
+.DS_Store
+.playwright-cli/
+node_modules/
+.env
+.env.*
+*.log
+
+CODEX_TASK_LOG.md
+deployment/releases/
+.local/
