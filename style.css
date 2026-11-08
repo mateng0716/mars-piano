@@ -39,3 +39,11 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
 .group-celebration p{color:#52757b;margin:10px 0 13px}
 .group-celebration.finished p{color:#876d4d}
 @media(max-height:700px){.group-celebration{min-height:135px;padding:12px 17px}}
+
+/* Keep every practice control reachable on 768px iPad portrait screens. */
+@media (min-width: 701px) and (max-width: 800px) {
+  body:not(.show-home) header { padding: 0 8px 5px; }
+  body:not(.show-home) .brand { display: none; }
+  body:not(.show-home) .topnav { width: 100%; justify-content: space-between; gap: 6px; }
+  body:not(.show-home) .topnav select { flex: 1; min-width: 0; }
+}
