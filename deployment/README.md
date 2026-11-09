@@ -4,9 +4,11 @@
 
 ## 当前发布
 
-静态页面源提交：`c4d3cf981e28`。发布包 `releases/mars-piano-c4d3cf981e28.tar.gz`，SHA-256 `85c38cbe2b25bc0fa7bdb422cdede858189bbda2a0a6e5d41e44168b1e1e9049`。服务器发布目录 `/srv/agentcloud/apps/piano/releases/c4d3cf981e28`；`/srv/agentcloud/apps/piano/current` 是指向它的软链接。上一版本 `311e15cf0deb` 保留在独立目录用于回退。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供静态文件，Caddy 反向代理该端口并管理证书。
+静态页面源提交：`4816ac40cf2c`。发布包 `releases/mars-piano-4816ac40cf2c.tar.gz`，SHA-256 `1878ee9c6a23ecf2c0ee9472e1517faae9b60aff514633c88981fce3f9b67ee3`。服务器发布目录 `/srv/agentcloud/apps/piano/releases/4816ac40cf2c`；`/srv/agentcloud/apps/piano/current` 是指向它的软链接。上一版本 `c4d3cf981e28` 保留在独立目录用于回退。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供静态文件，Caddy 反向代理该端口并管理证书。
 
-2026-11-09 本次更新回执：服务器 `sha256sum -c` OK，更新脚本回报 `Current release: c4d3cf981e28`、`Previous release: releases/311e15cf0deb`，本机服务/资源健康检查通过。公网可信 HTTPS 返回 200；`index.html`、`app.js`、`music-data.js`、`style.css`、`course-data.js`、`lesson-visuals.js`、C4/E5 琴键采样与本地包逐字节一致。线上 768×1024 浏览器验证《大梦归》《吉量》曲目入口、《吉量》首音居中与正确按键推进、中央 C 试听/加载与正确按键推进、自由键盘 C4 谱面反馈；1194×834 下页面无溢出且白键无字母。GitHub 源码提交 `477c806a2f5589cc3ccf820771f6c5df3840cd94` 的主要文件与本地一致，Actions `Validate static site` 通过。以上为浏览器模拟尺寸验收，实体 iPad、麦克风试唱及主观听感继续见 Issue #2。
+2026-11-09 本次 C 调与节拍练习更新回执：服务器文件管理器显示归档与 `.sha256` 均传输成功，`sha256sum -c` 回报 OK；更新脚本回报 Current `4816ac40cf2c`、Previous `releases/c4d3cf981e28`，本机健康检查通过。公网 HTTPS 首页、C4 音频均为 200；`index.html`、`app.js`、`music-data.js`、`style.css`、`course-data.js`、`lesson-visuals.js` 与本地发布包逐字节一致。线上 768×1024 浏览器验证五首曲目完整列表、点击直入、《致爱丽丝》3/8 小节按拍弹奏通过并进入下一小节、键盘端部留白透明、按键后无焦点残留和无横向溢出；控制台 0 错误。GitHub 源码提交 `fda7d73553173c2b2492e6cd8f2b3589999a5cfc` 的五个改动文件 blob 与本地一致，Actions `Validate static site` 运行 `42639585495` 成功。以上为浏览器尺寸模拟；实体 iPad、麦克风及主观听感继续见 Issue #2。
+
+2026-11-09 上次更新回执（`c4d3cf981e28`）：服务器 `sha256sum -c` OK，更新脚本回报 `Current release: c4d3cf981e28`、`Previous release: releases/311e15cf0deb`，本机服务/资源健康检查通过。公网可信 HTTPS 返回 200；`index.html`、`app.js`、`music-data.js`、`style.css`、`course-data.js`、`lesson-visuals.js`、C4/E5 琴键采样与本地包逐字节一致。线上 768×1024 浏览器验证《大梦归》《吉量》曲目入口、《吉量》首音居中与正确按键推进、中央 C 试听/加载与正确按键推进、自由键盘 C4 谱面反馈；1194×834 下页面无溢出且白键无字母。GitHub 源码提交 `477c806a2f5589cc3ccf820771f6c5df3840cd94` 的主要文件与本地一致，Actions `Validate static site` 通过。
 
 2026-11-09 上次更新回执（`311e15cf0deb`）：服务器 `sha256sum -c` 和更新脚本健康检查通过；公网 HTTPS 的首页、CSS、4 个 JavaScript 文件与 C4 钢琴采样和当时的本地候选逐字节一致。线上 768×1024 浏览器检查：抽屉宽 720px、练习按钮 190×58px、19 节课卡与所选详情图同源；《欢乐颂》左手低音谱号与《致爱丽丝》右手 E5–D♯5 谱面显示正常，控制台 0 错误。
 
