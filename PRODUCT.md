@@ -48,8 +48,10 @@
 | 欢乐颂 | 1 级目标 · C 大调、4/4、相邻音 | 公版旋律开头节选，原创简化左手 | [Mutopia](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=528) |
 | G 大调小步舞曲 | 2 级目标 · 3/4、F♯、较宽音域 | 佩措尔德公版旋律开头节选，原创简化左手 | [IMSLP](https://imslp.org/wiki/Minuet_(Pezold%2C_Christian)) |
 | 致爱丽丝 | 3 级目标 · 3/8、高音区、D♯ | 贝多芬公版旋律片段儿童改编，原创简化左手 | [Mutopia](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=931) |
+| 大梦归 | 2 级目标 · 4/4、重复音与跳进 | 依据用户提供的钢琴谱，取副歌动机简化节奏；原创简化左手 | [周深官方音源](https://www.youtube.com/watch?v=Xb8AQoiofOY) |
+| 吉量 | 2 级目标 · 4/4、重复音与相邻音 | 取开场主题短句，从降 B 小调移至 A 小调并降低音区；原创简化左手 | [央视春晚官方演出](https://www.youtube.com/watch?v=C7j-HocIXLE) |
 
-应用内以短小节逐段呈现；本项目不复制 ABRSM 出版的曲目列表或受版权保护的版本。
+应用内以短小节逐段呈现；两首现代歌曲仅收录儿童教学短句，不嵌入第三方谱图、录音或 ABRSM 出版内容。站内练习谱不是原版乐谱，来源链接指向原曲试听。
 
 ## 图片、语音与服务边界
 

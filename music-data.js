@@ -1,4 +1,5 @@
-// Public-domain melodies, transcribed as short sight-reading excerpts. Left-hand lines are new, simplified accompaniments.
+// Short sight-reading excerpts. Modern-song entries are children's teaching adaptations, not official scores.
+// Left-hand lines are new, simplified accompaniments. 吉量's opening motif is transposed from B-flat minor to A minor.
 // Levels describe reading goals inspired by ABRSM Practical Piano sight-reading, not official exam-piece status.
 const note=(pitch,beats=1)=>({pitch,beats});
 const MUSIC_PIECES=[
@@ -56,6 +57,44 @@ const MUSIC_PIECES=[
         [note('E4',.5),note('A3',.5),note('E4',.5)],
         [note('A3',.5),note('E4',.5),note('A3',.5)],
         [note('C4',.5),note('E4',.5),note('A3',.5)]
+      ]
+    }
+  },
+  {
+    title:'大梦归',composer:'陈曦 · 周深演唱',grade:'2 级目标',meter:'4/4',key:'A 小调',modern:true,
+    description:'从熟悉的副歌动机开始，每小节只读一小句。右手保留主旋律走向，左手用两个长音轻轻托住。',
+    source:'https://www.youtube.com/watch?v=Xb8AQoiofOY',
+    hands:{
+      right:[
+        [note('A4',.5),note('E5',.5),note('E5'),note('B4',.5),note('E5',.5),note('E5')],
+        [note('C5',.5),note('C5',.5),note('D5'),note('E5'),note('D5')],
+        [note('D5',.5),note('D5',.5),note('F5'),note('C5',.5),note('C5',.5),note('E5')],
+        [note('D5',.5),note('D5',.5),note('E5'),note('D5',.5),note('C5',.5),note('B4')]
+      ],
+      left:[
+        [note('A3',2),note('E3',2)],
+        [note('F3',2),note('C3',2)],
+        [note('D3',2),note('A3',2)],
+        [note('E3',2),note('B3',2)]
+      ]
+    }
+  },
+  {
+    title:'吉量',composer:'谭淇尹 · 周深演唱',grade:'2 级目标',meter:'4/4',key:'A 小调 · 移调',modern:true,
+    description:'把开场反复出现的主题移到好找的白键音区。先读右手的跳进与重复音，再读左手的两个长音。',
+    source:'https://www.youtube.com/watch?v=C7j-HocIXLE',
+    hands:{
+      right:[
+        [note('G4',.5),note('A4',.5),note('A4',.5),note('E4',.5),note('G4',.5),note('A4',.5),note('A4')],
+        [note('C5'),note('A4'),note('C5'),note('A4')],
+        [note('G4',.5),note('A4',.5),note('A4',.5),note('E4',.5),note('D4',.5),note('E4',.5),note('C4',.5),note('A3',.5)],
+        [note('D4'),note('C4'),note('D4'),note('C4')]
+      ],
+      left:[
+        [note('A3',2),note('E3',2)],
+        [note('A3',2),note('E3',2)],
+        [note('F3',2),note('C3',2)],
+        [note('G3',2),note('D3',2)]
       ]
     }
   }
