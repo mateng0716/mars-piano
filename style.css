@@ -89,6 +89,7 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
 .free-staff strong{font-size:26px}
 .free-staff p{margin:4px;font-size:14px}
 .free-mode .score-overlay,.free-mode .lesson-badge{display:none}
+.keyboard-viewport .keyboard{margin-inline:max(0px,calc(50% - var(--key-width) / 2))}
 @media(max-width:700px){
   .course-drawer{padding:12px 14px 15px}
   .course-list{max-height:38vh;gap:7px}
