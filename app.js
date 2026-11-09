@@ -1,7 +1,7 @@
 const names=['Do','Re','Mi','Fa','Sol','La','Si','Do'];
 let hand='right',group=0,position=0,locked=false,audio=null,timer=null,courseIndex=0,pieceIndex=null,freeNote=null,drawerMode='course',pieceDone={right:false,left:false},playing=false,playTimers=[],pieceTake=null,micStream=null,micAnalyser=null,micLoop=null,singSince=0;
 const voices=new Map(),$=s=>document.querySelector(s);
-const pianoSampleNotes='C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 G#4 A4 A#4 B4 C#5 D5 D#5 E5 F5 F#5 G5 G#5 A5 A#5 B5 C6'.split(' ');
+const pianoSampleNotes='C2 D2 E2 F2 G2 G#2 A2 A#2 B2 C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 G#4 A4 A#4 B4 C#5 D5 D#5 E5 F5 F#5 G5 G#5 A5 A#5 B5 C6 C#6 D6 D#6 F6 F#6 G6 G#6 A6 A#6'.split(' ');
 const pianoBuffers=new Map();let pianoPreloadStarted=false,pianoOutput=null;
 const notes=()=>hand==='right'?['C4','D4','E4','F4','G4','A4','B4','C5']:['C3','D3','E3','F3','G3','A3','B3','C4'];
 const groups=()=>pieceIndex!==null?MUSIC_PIECES[pieceIndex].hands[hand]:courseIndex!==null?COURSE_LESSONS[courseIndex].groups:[[]];
@@ -24,7 +24,40 @@ function closestPianoSample(note){let best=null,distance=Infinity;for(const samp
 function stopTone(key){const v=voices.get(key);if(!v||!audio)return;v.gain.gain.cancelScheduledValues(audio.currentTime);v.gain.gain.setTargetAtTime(.0001,audio.currentTime,v.sampled ? .19 : .09);try{v.node.stop(audio.currentTime+(v.sampled ? .85 : .35))}catch{}voices.delete(key)}
 function startTone(note,key){if(!note)return;ensureAudio();if(!audio)return;stopTone(key);const anchor=closestPianoSample(note),gain=audio.createGain(),node=anchor?audio.createBufferSource():audio.createOscillator();if(anchor){node.buffer=pianoBuffers.get(anchor);node.playbackRate.value=Math.pow(2,(midi(note)-midi(anchor))/12)}else{node.type='triangle';node.frequency.value=frequency(note)}gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(anchor ? .68 : .19,audio.currentTime+(anchor ? .006 : .025));node.connect(gain).connect(pianoOutput||audio.destination);node.start();voices.set(key,{node,gain,sampled:!!anchor})}
 function ping(note){startTone(note,'preview');setTimeout(()=>stopTone('preview'),500)}
+function renderPieceStaff(){
+ const piece=MUSIC_PIECES[pieceIndex],measures=groups(),barLength=measureLength(piece.meter),[count,denominator]=meterParts(piece.meter);
+ const naturalIndex=note=>{const match=/^([A-G])#?(\d)$/.exec(note);return Number(match[2])*7+'CDEFGAB'.indexOf(match[1])};
+ const bottomIndex=naturalIndex(hand==='right'?'E4':'G2');
+ const rows=[];
+ for(let row=0;row<Math.ceil(measures.length/2);row++){
+  const first=row*2,last=Math.min(first+2,measures.length);
+  const lines=[48,64,80,96,112].map(y=>`<line x1="73" x2="806" y1="${y}" y2="${y}" stroke="#8cabc9" stroke-width="2.6"/>`).join('');
+  const signature=`<text x="150" y="77" text-anchor="middle" font-size="27" font-weight="900" fill="#4777a3">${count}</text><text x="150" y="108" text-anchor="middle" font-size="27" font-weight="900" fill="#4777a3">${denominator}</text>`;
+  const bars=Array.from({length:last-first},(_,slot)=>{
+   const measureIndex=first+slot,items=measures[measureIndex],base=180+slot*313,onsets=noteOnsets(items);
+   const background=measureIndex===group?`<rect x="${base+3}" y="33" width="307" height="129" rx="12" fill="#dff4ff" opacity=".65"/>`:measureIndex<group?`<rect x="${base+3}" y="33" width="307" height="129" rx="12" fill="#e9fbf4" opacity=".55"/>`:'';
+   const heading=`<text x="${base+18}" y="23" font-size="16" font-weight="900" fill="${measureIndex===group?'#137da5':'#5d83a0'}">第 ${measureIndex+1} 小节</text>`;
+   const notes=items.map((item,i)=>{
+    const beat=beatOf(item,i),x=base+18+(onsets[i]+beat/2)/barLength*276,y=item?.rest?80:112-8*(naturalIndex(writtenPitchOf(item))-bottomIndex);
+    const fill=measureIndex<group||measureIndex===group&&i<position?'#2ba978':measureIndex===group&&i===position?'#167fca':'#8faac6';
+    const ledger=item?.rest?'':Array.from({length:Math.max(0,Math.floor((y-112)/16))},(_,n)=>`<line x1="${x-23}" x2="${x+24}" y1="${128+n*16}" y2="${128+n*16}" stroke="#8cabc9" stroke-width="2.4"/>`).join('')+Array.from({length:Math.max(0,Math.floor((48-y)/16))},(_,n)=>`<line x1="${x-23}" x2="${x+24}" y1="${32-n*16}" y2="${32-n*16}" stroke="#8cabc9" stroke-width="2.4"/>`).join('');
+    const accidental=item?.pitch?.includes('#')?'♯':item?.pitch?.includes('b')?'♭':'';
+    const accidentalGlyph=accidental?`<text x="${x-30}" y="${y+8}" font-size="26" font-weight="800" fill="${fill}">${accidental}</text>`:'';
+    const head=item?.rest?`<path d="M ${x+7} ${y-24} l -14 16 l 16 8 l -14 16" fill="none" stroke="${fill}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`:beat>=2?`<ellipse cx="${x}" cy="${y}" rx="12" ry="9" fill="none" stroke="${fill}" stroke-width="3.2"/>`:`<ellipse cx="${x}" cy="${y}" rx="12" ry="9" fill="${fill}"/>`;
+    const down=y<56,stem=item?.rest||beat>=4?'':down?`<line x1="${x-11}" x2="${x-11}" y1="${y}" y2="${y+38}" stroke="${fill}" stroke-width="2.7"/>`:`<line x1="${x+11}" x2="${x+11}" y1="${y}" y2="${y-38}" stroke="${fill}" stroke-width="2.7"/>`;
+    const flag=item?.rest||beat>.5?'':down?`<path d="M ${x-11} ${y+38} Q ${x+11} ${y+24} ${x+5} ${y+11}" fill="none" stroke="${fill}" stroke-width="2.7"/>`:`<path d="M ${x+11} ${y-38} Q ${x+32} ${y-25} ${x+25} ${y-12}" fill="none" stroke="${fill}" stroke-width="2.7"/>`;
+    return `<g class="score-note" data-measure="${measureIndex}" data-index="${i}" role="button" tabindex="0" aria-label="试听第 ${measureIndex+1} 小节 ${labelOf(item)}"><rect x="${x-23}" y="${Math.min(y-48,48)}" width="46" height="${Math.max(72,y+30-Math.min(y-48,48))}" fill="transparent"/>${ledger}${accidentalGlyph}${stem}${flag}${head}<text x="${x}" y="156" text-anchor="middle" font-size="15" font-weight="800" fill="${fill}">${labelOf(item)}</text></g>`
+   }).join('');
+   return `${background}${heading}<line x1="${base}" x2="${base}" y1="48" y2="112" stroke="#638aa6" stroke-width="2.5"/><line x1="${base+313}" x2="${base+313}" y1="48" y2="112" stroke="#638aa6" stroke-width="2.5"/>${notes}`;
+  }).join('');
+  rows.push(`<svg class="score-line" viewBox="0 0 820 168" preserveAspectRatio="none" role="img" aria-label="${piece.title}，${hand==='right'?'右手':'左手'}，第 ${first+1} 至 ${last} 小节"><text x="85" y="113" font-family="Georgia,serif" font-size="91" fill="#4576a2">${hand==='right'?'𝄞':'𝄢'}</text>${signature}${lines}${bars}</svg>`);
+ }
+ $('#staff').innerHTML=rows.join('');
+ $('#staff').querySelectorAll('.score-note').forEach(el=>{const preview=()=>previewStaffNote(Number(el.dataset.index),Number(el.dataset.measure));el.addEventListener('click',preview);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();preview()}})});
+}
 function renderStaff(){
+ $('#staff').classList.toggle('piece-score',pieceIndex!==null);
+ if(pieceIndex!==null){renderPieceStaff();return}
  const freeMode=courseIndex===null&&pieceIndex===null;
  const right=freeMode?(freeNote===null||midi(freeNote)>=60):hand==='right',p=freeMode?(freeNote?[{pitch:freeNote}]:[]):phrase(),courseTitle=courseIndex===null?'':COURSE_LESSONS[courseIndex].title;
  const timeSig=pieceIndex!==null?MUSIC_PIECES[pieceIndex].meter:courseTitle.includes('4/4')?'4/4':courseTitle==='2/4 与 3/4 拍'?(group<2?'2/4':'3/4'):courseTitle==='6/8 拍'?'6/8':null;
@@ -52,9 +85,9 @@ function renderStaff(){
 }
 function renderKeyboard(){
  const all=[];
- for(let oct=3;oct<=5;oct++)for(const letter of 'CDEFGAB')all.push(letter+oct);
- all.push('C6');
- const whites=all.map(note=>`<button class="white-key" data-note="${note}" aria-label="${note} 琴键"></button>`).join('');
+ for(let oct=2;oct<=6;oct++)for(const letter of 'CDEFGAB')all.push(letter+oct);
+ all.push('C7');
+ const whites=all.map((note,i)=>`<button class="white-key" data-note="${note}" aria-label="${note} 琴键" style="left:calc(${i} * var(--key-width))"></button>`).join('');
  const blacks=all.slice(0,-1).flatMap((note,i)=>'EB'.includes(note[0])?[]:[`<button class="black-key" data-note="${note[0]}#${note.slice(1)}" aria-label="${note[0]}#${note.slice(1)} 黑键" style="left:calc(${i+1} * var(--key-width) - var(--black-width) / 2)"><span>${note[0]}♯</span></button>`]).join('');
  $('#keyboard').innerHTML=whites+blacks;
  $('#keyboard').querySelectorAll('button').forEach(b=>{
@@ -66,7 +99,7 @@ function keyPosition(b,v){const key=b.getBoundingClientRect(),viewport=v.getBoun
 function locate(){const target=pitchOf(current())||notes()[0],b=$(`#keyboard [data-note="${target}"]`),v=$('#keyboardViewport');if(b){const {center}=keyPosition(b,v);v.scrollTo({left:center-v.clientWidth/2,behavior:'smooth'})}}
 function revealCurrent(){const pitch=pitchOf(current()),b=pitch?$(`#keyboard [data-note="${pitch}"]`):null,v=$('#keyboardViewport');if(!b)return;const {left,right,center}=keyPosition(b,v);if(left<v.scrollLeft+12||right>v.scrollLeft+v.clientWidth-12)v.scrollTo({left:center-v.clientWidth/2,behavior:'smooth'})}
 function updateHint(){$('#keyboard').querySelectorAll('.target').forEach(b=>b.classList.remove('target'));$('#keyboard').querySelectorAll('[data-finger]').forEach(b=>b.removeAttribute('data-finger'));if(courseIndex!==null)notes().slice(0,5).forEach((note,i)=>{const b=$(`#keyboard [data-note="${note}"]`);if(b)b.dataset.finger=hand==='right'?i+1:5-i});if($('#hint').checked&&pitchOf(current()))$(`#keyboard [data-note="${pitchOf(current())}"]`)?.classList.add('target')}
-function render(centerFirst=false){stopPieceTake();clearTimeout(timer);locked=false;clearKeyColors();$('#groupCelebration').hidden=true;$('#feedback').textContent='';$('#nextBtn').hidden=true;document.body.classList.toggle('free-mode',courseIndex===null&&pieceIndex===null);if(current()?.rest){$('#feedback').textContent='休止一拍 · 不按键';if(!playing)timer=setTimeout(advance,850)}$('#lessonBadge').hidden=courseIndex===null&&pieceIndex===null;if(courseIndex!==null)$('#lessonBadge').textContent=`${String(courseIndex+1).padStart(2,'0')} · ${COURSE_LESSONS[courseIndex].title} · ${group+1}/${groups().length} 组`;if(pieceIndex!==null)$('#lessonBadge').textContent=`${MUSIC_PIECES[pieceIndex].title} · ${hand==='right'?'右手':'左手'} · 第 ${group+1}/${groups().length} 小节`;renderStaff();updateHint();syncPieceControls();requestAnimationFrame(centerFirst?locate:revealCurrent);const dual=courseIndex!==null&&['降号 ♭','黑键的两个名字'].includes(COURSE_LESSONS[courseIndex].title);for(const octave of [3,4,5]){const key=$(`#keyboard [data-note="D#${octave}"] span`);if(key)key.innerHTML=dual?'D♯<br>E♭':'D♯'}}
+function render(centerFirst=false){stopPieceTake();clearTimeout(timer);locked=false;clearKeyColors();$('#groupCelebration').hidden=true;$('#feedback').textContent='';$('#nextBtn').hidden=true;document.body.classList.toggle('free-mode',courseIndex===null&&pieceIndex===null);document.body.classList.toggle('piece-mode',pieceIndex!==null);if(current()?.rest){$('#feedback').textContent='休止一拍 · 不按键';if(!playing)timer=setTimeout(advance,850)}$('#lessonBadge').hidden=courseIndex===null&&pieceIndex===null;if(courseIndex!==null)$('#lessonBadge').textContent=`${String(courseIndex+1).padStart(2,'0')} · ${COURSE_LESSONS[courseIndex].title} · ${group+1}/${groups().length} 组`;if(pieceIndex!==null)$('#lessonBadge').textContent=`${MUSIC_PIECES[pieceIndex].title} · ${hand==='right'?'右手':'左手'} · 第 ${group+1}/${groups().length} 小节`;renderStaff();updateHint();syncPieceControls();requestAnimationFrame(centerFirst?locate:revealCurrent);const dual=courseIndex!==null&&['降号 ♭','黑键的两个名字'].includes(COURSE_LESSONS[courseIndex].title);for(const octave of [2,3,4,5,6]){const key=$(`#keyboard [data-note="D#${octave}"] span`);if(key)key.innerHTML=dual?'D♯<br>E♭':'D♯'}}
 function judge(b){if(courseIndex===null&&pieceIndex===null||locked||playing)return;if(pieceIndex!==null){recordPieceNote(b);return}if(current()?.rest){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='休止时停一拍';return}$('#keyboard').querySelectorAll('.preview').forEach(k=>k.classList.remove('preview'));if(b.dataset.note!==pitchOf(current())){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='再试一次';return}locked=true;clearKeyColors();b.classList.add('correct');$('#feedback').textContent='✓';timer=setTimeout(advance,420)}
 function showCelebration(){locked=true;clearKeyColors();$('#keyboard').querySelectorAll('.target').forEach(b=>b.classList.remove('target'));const box=$('#groupCelebration');box.hidden=false;box.classList.add('finished');$('#celebrationProgress').innerHTML=Array.from({length:groups().length},()=>'<span class="done"></span>').join('');$('#nextBtn').hidden=false;if(pieceIndex!==null){pieceDone[hand]=true;const other=hand==='right'?'left':'right';$('#celebrationTitle').textContent='这一只手读完了';$('#celebrationGuide').textContent=pieceDone[other]?'双手谱都读完了！可以再读一遍，或选下一首。':`接下来试试${other==='right'?'右手':'左手'}谱。`;$('#nextBtn').textContent=pieceDone[other]?'再读这首 ↻':`练${other==='right'?'右手':'左手'} →`;return}$('#celebrationTitle').textContent='这节练完了';$('#celebrationGuide').textContent=courseIndex<COURSE_LESSONS.length-1?`接下来：${COURSE_LESSONS[courseIndex+1].title}`:'课程已完成，可以去曲子识谱试试。';$('#nextBtn').textContent=courseIndex<COURSE_LESSONS.length-1?'进入下一课 →':'去曲子识谱 →'}
 function advance(){if(position<phrase().length-1){position++;render()}else if(group<groups().length-1){group++;position=0;render()}else showCelebration()}
@@ -130,7 +163,7 @@ function finishPieceTake(){
  locked=true;$('#beatBtn').disabled=true;$('#feedback').textContent='✓ 整小节的音和节拍都完成了';
  timer=setTimeout(()=>{if(group<groups().length-1){group++;position=0;render(true)}else showCelebration()},900);
 }
-function previewStaffNote(i){const item=phrase()[i],pitch=pitchOf(item);if(!pitch){$('#feedback').textContent='休止一拍';return}const b=$(`#keyboard [data-note="${pitch}"]`);if(!b)return;clearKeyColors();b.classList.add('preview');ping(pitch)}
+function previewStaffNote(i,measure=group){const item=courseIndex===null&&pieceIndex===null?(freeNote?{pitch:freeNote}:null):groups()[measure]?.[i],pitch=pitchOf(item);if(!pitch){$('#feedback').textContent='休止一拍';return}const b=$(`#keyboard [data-note="${pitch}"]`);if(!b)return;clearKeyColors();b.classList.add('preview');ping(pitch)}
 function enterPractice(){document.body.classList.remove('show-home');requestAnimationFrame(locate)}
 function showHome(){clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}document.body.classList.add('show-home');$('#courseDrawer').hidden=true}
 function chooseHand(next){stopPlayback();stopSinging();hand=next;document.querySelectorAll('[data-hand]').forEach(b=>b.classList.toggle('selected',b.dataset.hand===hand));reset()}
@@ -161,16 +194,15 @@ renderKeyboard();renderCourseList();render();preloadPianoSamples();requestAnimat
 function openDrawer(type){
  drawerMode=type;clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();
  $('#courseDrawer').classList.toggle('piece-picker',type==='pieces');
- $('#lessonDetail').hidden=type==='pieces';
- if(type==='course'){enterPractice();if(courseIndex===null)selectCourse(0);else{renderCourseList();renderCourseDetail()}}
+ $('#courseDrawer').classList.toggle('course-picker',type==='course');
+ if(type==='course'){enterPractice();renderCourseList()}
  else renderPieceList();
- $('#drawerKicker').textContent=type==='course'?'ABRSM 1–3 级知识范围 · 儿童改编':'5 首 C 大调教学版 · 选一首直接开始';
+ $('#drawerKicker').textContent=type==='course'?'ABRSM 1–3 级知识范围 · 点一课直接开始':'5 首 C 大调教学版 · 选一首直接开始';
  $('#drawerTitle').textContent=type==='course'?'19 节乐理课':'曲子识谱';
  $('#courseDrawer').hidden=false;
 }
-function renderCourseList(){const list=$('#lessonList');list.className='course-list';list.innerHTML=COURSE_LESSONS.map((l,i)=>`<button class="course-item ${courseIndex===i?'chosen':''}" data-index="${i}" aria-label="第 ${i+1} 课 ${l.title}"><span class="course-num">${String(i+1).padStart(2,'0')}</span><span class="course-item-copy"><b>${l.title}</b><small>${l.grade}</small></span><span class="course-thumb" aria-hidden="true">${lessonDiagram(i)}</span></button>`).join('');list.querySelectorAll('button').forEach(b=>b.onclick=()=>selectCourse(Number(b.dataset.index)))}
-function renderCourseDetail(){$('#lessonDetail').hidden=false;const i=courseIndex,l=COURSE_LESSONS[i];$('#lessonDetail').innerHTML=`<div class="detail-diagram">${lessonDiagram(i)}</div><div class="lesson-copy"><span class="detail-grade">第 ${i+1} 课 · ${l.grade}</span><h3>${l.title}</h3><p>${l.idea}</p><p class="detail-task">🎹 ${l.task}</p><div class="lesson-actions"><button id="narrateBtn" class="narrate" type="button"><img src="${pianoAssetUrl('assets/lesson-art/star-guide.png')}" alt="">听星星讲解</button><button id="startLesson" class="primary start-practice" type="button">开始练习 →</button></div></div>`;$('#narrateBtn').onclick=()=>playNarration(i);$('#startLesson').onclick=()=>{enterPractice();$('#courseDrawer').hidden=true}}
-function selectCourse(i){if(narrationAudio){narrationAudio.pause();narrationAudio=null}stopPlayback();stopSinging();pieceIndex=null;courseIndex=i;const l=COURSE_LESSONS[i];hand=l.hand||'right';document.querySelectorAll('[data-hand]').forEach(b=>b.classList.toggle('selected',b.dataset.hand===hand));group=0;position=0;render(true);renderCourseList();renderCourseDetail()}
+function renderCourseList(){const list=$('#lessonList');list.className='course-list';list.innerHTML=COURSE_LESSONS.map((l,i)=>`<button class="course-item ${courseIndex===i?'chosen':''}" data-index="${i}" aria-label="开始第 ${i+1} 课 ${l.title}"><span class="course-num">${String(i+1).padStart(2,'0')}</span><span class="course-item-copy"><b>${l.title}</b><small>${l.grade}</small></span><span class="course-thumb" aria-hidden="true">${lessonDiagram(i)}</span></button>`).join('');list.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectCourse(Number(b.dataset.index));enterPractice();$('#courseDrawer').hidden=true})}
+function selectCourse(i){if(narrationAudio){narrationAudio.pause();narrationAudio=null}stopPlayback();stopSinging();pieceIndex=null;courseIndex=i;const l=COURSE_LESSONS[i];hand=l.hand||'right';document.querySelectorAll('[data-hand]').forEach(b=>b.classList.toggle('selected',b.dataset.hand===hand));group=0;position=0;render(true);renderCourseList()}
 function renderPieceList(){
  const list=$('#lessonList');list.className='course-list piece-list';
  list.innerHTML=MUSIC_PIECES.map((p,i)=>`<button class="course-item piece-item ${pieceIndex===i?'chosen':''}" data-index="${i}" aria-label="打开 ${p.title}，${p.key} ${p.meter}"><span class="course-num">${String(i+1).padStart(2,'0')}</span><span class="course-item-copy"><b>${p.title}</b><small>${p.key} · ${p.meter} · ${p.grade}</small></span><span class="piece-start" aria-hidden="true">开始 →</span></button>`).join('');

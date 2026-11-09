@@ -14,6 +14,6 @@ python3 -m http.server 4173
 
 线上地址：<https://piano.gotomars.me/>。页面由 `index.html`、`app.js`、`course-data.js`、`music-data.js`、`lesson-visuals.js`、`style.css` 和 `assets/` 组成，无构建步骤。腾讯北京服务器以独立的 `gotomars-piano.service` 提供静态文件，由 Caddy 反向代理。部署、验证与回退见 [deployment/README.md](deployment/README.md)。
 
-首页右上角的「刷新最新版」会重新请求页面，并为本站样式、脚本、插画和琴声资源加入新的查询参数，方便在 iPad 上手动获取刚发布的内容。键盘滚动到最右端时以 C6 为止，不再露出额外空白。
+首页右上角的「刷新最新版」会重新请求页面，并为本站样式、脚本、插画和琴声资源加入新的查询参数。键盘覆盖 C2–C7，两端以真实琴键为边界；乐理抽屉完整列出 19 节，点课直接练习。每首曲子的四个小节同时显示，保留逐小节跟拍练习。
 
 发布前对 4 个 JavaScript 文件运行 `node --check`，确认资源完整；发布后检查公网 HTTPS、课程、曲子识谱、音频和钢琴采样。实体 iPad 触控、麦克风试唱和真实听感仍需家长验收。
