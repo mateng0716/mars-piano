@@ -109,3 +109,31 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
   .topnav .soft{font-size:10px;padding:6px 7px}
   .topnav .hand-switch{min-width:84px}
 }
+
+/* The visible keybed ends at C3 and C6; centering gutters stay transparent. */
+.keyboard-viewport{background:transparent;box-shadow:none;-webkit-tap-highlight-color:transparent}
+.keyboard-viewport .keyboard{background:#d6e4e6;border-radius:11px 11px 0 0}
+.keyboard button{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.keyboard button:focus{outline:none}
+.keyboard button:focus-visible{outline:3px solid #f3a83e;outline-offset:-4px}
+
+/* Song picker is a single full list. Selecting a row opens the score. */
+.course-drawer.piece-picker .piece-list{flex:1;min-height:0;max-height:none;grid-template-columns:1fr;align-content:start;overflow:auto}
+.course-drawer.piece-picker .piece-item{min-height:clamp(96px,12vh,130px);padding:15px 20px}
+.course-drawer.piece-picker .piece-item b{font-size:clamp(18px,2.1vw,23px)}
+.course-drawer.piece-picker .piece-item .course-num{font-size:25px}
+.course-drawer.piece-picker .piece-item small{font-size:13px}
+.course-drawer.piece-picker .piece-item .piece-start{flex:none;color:#167d9e;font-weight:900;font-size:14px}
+.course-drawer.piece-picker .lesson-detail{display:none}
+.beat-start{background:#e3f8ed!important;border-color:#8fcdb9!important;color:#247c66!important}
+.beat-start:disabled{opacity:.72;cursor:default}
+.score-overlay [hidden]{display:none!important}
+.keyboard .white-key.target::after{content:"";position:absolute;inset:auto auto 14px 50%;width:12px;height:12px;transform:translateX(-50%);border:0;border-radius:50%;background:#18aebb;box-shadow:0 0 0 4px #18aebb40;pointer-events:none}
+.keyboard .black-key.target::after{content:"";position:absolute;left:50%;bottom:7px;width:9px;height:9px;transform:translateX(-50%);border-radius:50%;background:#ffca73;box-shadow:0 0 0 3px #ffca7340;pointer-events:none}
+@media(max-width:700px){
+  .course-drawer.piece-picker .piece-item{min-height:clamp(82px,11vh,106px);padding:10px 12px}
+  .course-drawer.piece-picker .piece-item b{font-size:17px}
+  .course-drawer.piece-picker .piece-item small{font-size:11px}
+  .course-drawer.piece-picker .piece-item .piece-start{font-size:12px}
+  .score-overlay .hear{font-size:13px}
+}
