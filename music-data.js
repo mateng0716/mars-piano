@@ -88,13 +88,13 @@ const MUSIC_PIECES=[
         [note('G4',.5),note('A4',.5),note('A4',.5),note('E4',.5),note('G4',.5),note('A4',.5),note('A4')],
         [note('C5'),note('A4'),note('C5'),note('A4')],
         [note('G4',.5),note('A4',.5),note('A4',.5),note('E4',.5),note('D4',.5),note('E4',.5),note('C4',.5),note('A3',.5)],
-        [note('D4'),note('C4'),note('D4'),note('C4')]
+        [note('C4'),note('A3'),note('C4'),note('A3')]
       ],
       left:[
         [note('A3',2),note('E3',2)],
         [note('A3',2),note('E3',2)],
         [note('F3',2),note('C3',2)],
-        [note('G3',2),note('D3',2)]
+        [note('A3',2),note('E3',2)]
       ]
     }
   }
