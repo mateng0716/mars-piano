@@ -1,4 +1,4 @@
-"""Import the C3–C6 middle-velocity Steinway samples from Splendid Grand Piano.
+"""Import the C2–C7 middle-velocity Steinway samples from Splendid Grand Piano.
 
 Source: https://github.com/sfzinstruments/SplendidGrandPiano
 The source repository identifies the AKAI samples as public domain.
@@ -35,7 +35,7 @@ def eligible(entry):
         return None
     letter, sharp, octave = match.groups()
     midi = 12 * (int(octave) + 1) + SEMITONES[letter] + bool(sharp)
-    return letter + sharp + octave if 48 <= midi <= 84 else None
+    return letter + sharp + octave if 36 <= midi <= 96 else None
 
 
 def import_one(entry, note):
