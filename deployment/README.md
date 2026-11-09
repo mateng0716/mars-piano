@@ -10,8 +10,9 @@
 
 ## 更新与回退
 
-1. 对新静态版本生成归档与 SHA-256，上传到服务器，在 `/srv/agentcloud/apps/piano/releases/<版本>` 解压并核对文件。不要重复执行首次发布脚本 `stage-beijing.sh`。
-2. 创建 `current.next` 软链接并用 `mv -Tf` 原子替换 `current`；检查 `systemctl is-active gotomars-piano.service`、本机 19080、可信公网 HTTPS、首页与音频。Python 静态服务读取软链接目标，无需重启；如需重启，使用 `systemctl restart gotomars-piano.service`。
+1. 对新静态版本生成归档与 SHA-256，把归档、`.sha256` 和 `update-beijing.sh` 上传到服务器。不要重复执行首次发布脚本 `stage-beijing.sh`。
+2. 在服务器运行 `sudo bash /home/ubuntu/update-beijing.sh /home/ubuntu/mars-piano-<版本>.tar.gz`。脚本核对哈希、解压到独立版本目录并原子切换 `current`，本机健康检查失败时自动指回上一版本；不修改 Caddy 或其它站点。
+3. 继续检查 `systemctl is-active gotomars-piano.service`、本机 19080、可信公网 HTTPS、首页、曲目数据与音频。Python 静态服务读取软链接目标，无需重启；如需重启，使用 `systemctl restart gotomars-piano.service`。
 3. 回退页面时，把 `current` 原子指回上一发布目录。回退域名入口时，先备份当前 Caddyfile，再移除仅 `piano.gotomars.me` 的站点块，`caddy validate` 后 reload；若需完整撤销本次配置，可在确认备份之后没有其它合法变更时恢复上述 Caddyfile 备份。DNS 可在阿里云控制台删除 `piano` 记录。
 
 本项目无数据库和服务端密钥。`stage-beijing.sh`、`activate-beijing.sh` 是首次发布脚本；`verify-beijing.sh` 检查服务和本机资源。上线回执及真实设备尚待验收的范围见工作区任务日志。
