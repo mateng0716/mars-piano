@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check app.js && node --check course-data.js
+      - run: node --check app.js && node --check course-data.js && node --check music-data.js && node --check lesson-visuals.js
       - run: |
           test -f index.html
           test -f style.css
