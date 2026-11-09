@@ -12,6 +12,6 @@ python3 -m http.server 4173
 
 ## 发布
 
-线上地址：<https://piano.gotomars.me/>。页面由 `index.html`、`app.js`、`course-data.js`、`style.css` 和 `assets/` 组成，无构建步骤。腾讯北京服务器以独立的 `gotomars-piano.service` 提供静态文件，现有 Caddy 仅新增 `piano.gotomars.me` 反向代理，不影响英语站和其它路由。部署、验证与回退见 [deployment/README.md](deployment/README.md)。
+线上地址：<https://piano.gotomars.me/>。页面由 `index.html`、`app.js`、`course-data.js`、`music-data.js`、`lesson-visuals.js`、`style.css` 和 `assets/` 组成，无构建步骤。腾讯北京服务器以独立的 `gotomars-piano.service` 提供静态文件，由 Caddy 反向代理。部署、验证与回退见 [deployment/README.md](deployment/README.md)。
 
-发布前运行 `node --check app.js && node --check course-data.js`，确认资源完整；发布后检查公网 HTTPS、课程、音频、钢琴采样与麦克风权限。实体 iPad 体验仍需家长验收。
+发布前对 4 个 JavaScript 文件运行 `node --check`，确认资源完整；发布后检查公网 HTTPS、课程、曲子识谱、音频和钢琴采样。实体 iPad 触控、麦克风试唱和真实听感仍需家长验收。

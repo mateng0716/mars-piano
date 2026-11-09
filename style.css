@@ -47,3 +47,64 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
   body:not(.show-home) .topnav { width: 100%; justify-content: space-between; gap: 6px; }
   body:not(.show-home) .topnav select { flex: 1; min-width: 0; }
 }
+
+/* Lesson concepts and public-domain sight-reading. */
+.course-drawer{width:min(720px,100vw);padding:18px 22px 20px;gap:0}
+.drawer-head{align-items:center;gap:15px;flex:none}
+.drawer-head>div{flex:1;min-width:0}
+.drawer-head small{font-size:clamp(11px,1.5vw,15px)}
+.drawer-head h2{font-size:clamp(26px,3vw,38px)}
+.course-list{flex:0 1 auto;max-height:clamp(225px,40vh,430px);gap:10px;padding:16px 0;align-content:start}
+.course-item{min-height:78px;padding:9px 10px;gap:9px;overflow:hidden}
+.course-item-copy{flex:1;min-width:0}
+.course-item b{font-size:clamp(13px,1.45vw,18px);line-height:1.25}
+.course-item small{font-size:12px;margin-top:5px}
+.course-num{font-size:20px;flex:none}
+.course-thumb{display:block;width:108px;height:58px;flex:none;border-radius:9px;overflow:hidden}
+.course-thumb svg{display:block;width:100%;height:100%}
+.lesson-detail{flex:1;min-height:0;overflow:auto;padding-top:13px}
+.detail-diagram{width:100%;height:clamp(110px,16vh,180px);margin-bottom:12px}
+.detail-diagram svg{width:100%;height:100%;display:block}
+.lesson-copy{overflow:visible}
+.lesson-detail h3{font-size:clamp(23px,2.6vw,30px)}
+.lesson-detail p{margin:8px 0;line-height:1.48}
+.lesson-actions{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:16px;padding-bottom:7px}
+.lesson-actions .start-practice{font-size:20px;min-width:190px;min-height:58px;padding:13px 24px;border-radius:16px}
+.lesson-actions .narrate{min-height:54px;padding:8px 14px;font-size:15px}
+.piece-list{grid-template-columns:1fr;max-height:320px}
+.piece-item{min-height:95px}
+.piece-thumb{display:grid;place-items:center;flex:none;width:80px;height:62px;border-radius:12px;background:#dff5fa;color:#238da5;font-size:46px}
+.piece-preview{display:flex;align-items:center;gap:20px;min-height:120px;padding:15px 22px;border:1px solid #cde5eb;border-radius:16px;background:#f5fbfb}
+.piece-preview-symbol{font-family:Georgia,serif;font-size:72px;color:#3b86a9;line-height:1}
+.piece-preview div{min-width:0}
+.piece-preview small{display:block;color:#408aa0;font-weight:800;font-size:14px}
+.piece-preview strong{display:block;margin-top:9px;color:#315b7a;font-size:clamp(17px,2.2vw,25px);line-height:1.4;overflow-wrap:anywhere}
+.piece-hand-switch{display:flex;gap:10px;margin-top:15px}
+.piece-hand-switch button{min-width:116px;min-height:48px;border:2px solid #b7dce6;border-radius:13px;background:#f5fbfd;color:#396b85;font-weight:900}
+.piece-hand-switch button.selected{border-color:#1eaabc;background:#dff7f7;color:#1c7181}
+.piece-disclaimer{font-size:12px!important;color:#657f91!important}
+.piece-disclaimer a{color:#197c9f;font-weight:800}
+.free-staff{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#357e9a}
+.free-staff span{font-size:55px;line-height:1}
+.free-staff strong{font-size:26px}
+.free-staff p{margin:4px;font-size:14px}
+.free-mode .score-overlay,.free-mode .lesson-badge{display:none}
+@media(max-width:700px){
+  .course-drawer{padding:12px 14px 15px}
+  .course-list{max-height:38vh;gap:7px}
+  .course-item{min-height:69px;padding:8px;gap:6px}
+  .course-item b{font-size:13px}
+  .course-item small{font-size:10px}
+  .course-num{font-size:17px}
+  .course-thumb{width:82px;height:52px}
+  .detail-diagram{height:110px}
+  .lesson-actions .start-practice{min-height:55px;font-size:18px}
+}
+@media(max-width:480px){
+  .course-list{grid-template-columns:1fr;max-height:31vh}
+  .course-thumb{width:105px}
+  .piece-list{max-height:27vh}
+  .topnav{gap:4px}
+  .topnav .soft{font-size:10px;padding:6px 7px}
+  .topnav .hand-switch{min-width:84px}
+}
