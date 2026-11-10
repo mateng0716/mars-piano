@@ -15,4 +15,4 @@ jobs:
           test -f index.html
           test -f style.css
           test -f assets/piano/steinway-splendid/README.md
-          test "$(find assets/piano/steinway-splendid -name '*.m4a' | wc -l)" -eq 28
+          test "$(find assets/piano/steinway-splendid -name '*.m4a' | wc -l)" -eq 46
