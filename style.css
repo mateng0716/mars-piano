@@ -160,3 +160,59 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
   .course-drawer.piece-picker .piece-item .piece-start{font-size:12px}
   .score-overlay .hear{font-size:13px}
 }
+
+/* One-minute sight-reading challenge. */
+.show-home .home-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+.show-home .home-card{padding:20px 22px}
+.show-home .home-card>div{max-width:63%}
+.game-card{background:linear-gradient(125deg,#e9f6fc,#f3efff);border-color:#d9e7ed}
+.game-card-art{position:absolute;right:9%;top:50%;transform:translateY(-50%) rotate(-10deg);font-size:clamp(74px,9vw,145px);line-height:1;color:#50aec9;text-shadow:8px 10px 0 #c4e8ee}
+.game-card-art i{position:absolute;font-style:normal;font-size:.34em;color:#ffbe55;top:-.1em;right:-.2em;text-shadow:0 3px 0 #e59b54}
+.game-mode .topnav .game-open{background:#d9f6f9;color:#127e94;border-color:#6ac8d6}
+.game-mode .score-card{flex:none;display:flex;flex-direction:column;align-items:stretch;padding:10px 15px 8px;overflow:hidden}
+.game-mode .score-overlay,.game-mode .lesson-badge,.game-mode .hint-toggle{display:none!important}
+.game-mode .keyboard-viewport{flex:1;height:auto;min-height:32vh}
+.game-panel[hidden],.game-leaderboard[hidden],.game-result[hidden],.game-start[hidden]{display:none!important}
+.game-panel{position:relative;z-index:1;color:#2a5672}
+.game-panel-top,.game-actions{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.game-panel-top h2{font-size:clamp(20px,2.5vw,29px);line-height:1.15;margin:2px 0 8px}
+.game-panel-top h2 small{font-size:13px;color:#388ba4;background:#e8f8fa;border-radius:99px;padding:4px 9px;vertical-align:middle}
+.game-kicker{font-size:11px;letter-spacing:.12em;font-weight:900;color:#278fa5}
+.game-name{display:flex;align-items:center;gap:7px;color:#6389a2;font-size:12px;font-weight:800;white-space:nowrap}
+.game-name input{width:114px;max-width:26vw;min-height:35px;padding:6px 8px;border:1px solid #b8d9e2;border-radius:9px;background:#fff;color:#254e6d;font:inherit;font-size:13px}
+.game-start{min-height:42px;padding:7px 19px;border-radius:11px;background:#ffbf53;color:#563919;font-weight:900;box-shadow:0 3px 0 #e5a13a}
+.game-exit{min-height:42px;padding:7px 12px;border-radius:11px;background:#fff;border:1px solid #b8d9e2;color:#46778f;font-weight:800}
+.game-message{min-height:19px;margin:4px 0 0;color:#4b8398;font-size:12px;font-weight:800}
+.game-progress{height:3px;margin-top:6px;border-radius:99px;background:#e7f1f2;overflow:hidden}
+.game-progress[hidden]{display:none!important}
+.game-progress span{display:block;height:100%;border-radius:99px;background:#68c4bc;transition:width .1s linear}
+.game-mode .staff{flex:none;width:100%;height:clamp(155px,24vh,220px);min-height:0}
+.game-mode .staff.is-wrong{background:radial-gradient(circle at 50% 55%,#ffb8be88,transparent 47%);animation:game-red .45s ease-out}
+.game-mode .staff.is-wrong .game-note{animation:game-shake .32s ease-in-out}
+.game-mode .staff.is-correct .game-note ellipse{filter:drop-shadow(0 0 9px #48dba5)}
+.game-particle{opacity:0;transform-box:fill-box;transform-origin:center;animation:game-burst .55s ease-out forwards;animation-delay:var(--delay)}
+.game-result{position:absolute;left:76%;top:51%;z-index:5;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0;padding:4px 9px;border-radius:12px;background:#ffffffc9;color:#159e72;pointer-events:none;animation:game-pop .25s ease-out}
+.game-result strong{font-size:33px;line-height:1}
+.game-result span{font-size:12px;font-weight:900;white-space:nowrap}
+.game-result.wrong{color:#e7515c;background:#fff0f1e0}
+.game-result.correct{color:#16a76f;background:#edfff5e0}
+@keyframes game-pop{from{opacity:0;transform:translate(-50%,-45%) scale(.72)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.game-leaderboard{display:block;border-top:1px solid #d6e9ec;padding:7px 3px 0;color:#315f79}
+.game-leaderboard summary{width:max-content;max-width:100%;cursor:pointer;color:#477a92;font-size:12px;font-weight:850}
+.game-leaderboard summary small{margin-left:8px;color:#8ba4b2;font-size:10px;font-weight:700}
+.game-record-body{max-height:120px;overflow:auto;padding:7px 0 3px}
+.game-record-body p{margin:0 0 6px;font-size:12px;color:#527f95}
+.game-record-body .game-name{margin-bottom:6px}
+.game-leaderboard ol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 16px;list-style:none;margin:0;padding:0;font-size:12px}
+.game-leaderboard li{display:flex;align-items:center;gap:6px;min-width:0}
+.game-leaderboard li span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.game-leaderboard li strong{margin-left:auto;color:#168daa;white-space:nowrap}
+@keyframes game-burst{0%{opacity:0;transform:translate(0,0) scale(.2)}22%{opacity:1}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(1)}}
+@keyframes game-red{from{background-color:#ffd9dc}to{background-color:transparent}}
+@keyframes game-shake{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.game-mode .hand-switch button:disabled{opacity:.55;cursor:default}
+@media(max-width:900px){.show-home .home-card h2{font-size:20px}.show-home .home-card p{font-size:11px}.show-home .home-card{padding:15px}.game-card-art{right:5%;font-size:72px}}
+@media(max-width:700px){.game-mode #courseBtn,.game-mode #pieceBtn,.game-mode #shapeBtn{display:none}.game-mode .score-card{padding:8px 9px}.game-panel-top h2{font-size:20px}.game-start{padding:7px 10px}.game-mode .staff{height:clamp(135px,21vh,180px)}.game-leaderboard ol{grid-template-columns:1fr}}
+@media(max-width:650px){.show-home .home-cards{grid-template-columns:1fr;grid-template-rows:repeat(3,180px)}.show-home .home-card h2{font-size:24px}.game-panel-top{gap:4px}.game-actions{gap:4px}.game-name input{width:88px}.game-exit{padding:7px}}
+@media(max-height:700px){.game-mode .score-card{padding-top:5px;padding-bottom:4px}.game-mode .staff{height:130px}.game-record-body{max-height:70px}.game-mode .keyboard-viewport{min-height:29vh}}
+@media(prefers-reduced-motion:reduce){.game-result,.game-card,.game-particle,.game-mode .staff.is-wrong,.game-mode .staff.is-wrong .game-note{animation:none;transition:none}}
