@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'deployment' / 'releases'
 OUTPUT.mkdir(parents=True, exist_ok=True)
 commit = subprocess.check_output(['git', 'rev-parse', '--short=12', 'HEAD'], cwd=ROOT, text=True).strip()
-paths = [Path('index.html'), Path('style.css'), Path('app.js'), Path('course-data.js'), Path('music-data.js'), Path('lesson-visuals.js')]
+paths = [Path('index.html'), Path('style.css'), Path('app.js'), Path('course-data.js'), Path('music-data.js'), Path('lesson-visuals.js'), Path('version.json'), Path('manifest.webmanifest')]
+paths += [Path('deployment/serve.py')]
 paths += [p.relative_to(ROOT) for p in sorted((ROOT / 'assets').rglob('*')) if p.is_file()]
 archive = OUTPUT / f'mars-piano-{commit}.tar.gz'
 with tarfile.open(archive, 'w:gz') as tar:
@@ -20,7 +21,7 @@ with tarfile.open(archive, 'w:gz') as tar:
         info = tar.gettarinfo(str(file), arcname=str(rel))
         info.uid = info.gid = 0
         info.uname = info.gname = ''
-        info.mtime = 0
+        info.mtime = int(subprocess.check_output(['git','show','-s','--format=%ct','HEAD'],cwd=ROOT,text=True).strip())
         with file.open('rb') as stream:
             tar.addfile(info, stream)
 digest = hashlib.sha256(archive.read_bytes()).hexdigest()
