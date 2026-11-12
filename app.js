@@ -1,12 +1,12 @@
 const names=['Do','Re','Mi','Fa','Sol','La','Si','Do'];
-let hand='right',group=0,position=0,locked=false,audio=null,timer=null,courseIndex=0,pieceIndex=null,freeNote=null,drawerMode='course',pieceDone={right:false,left:false},playing=false,playTimers=[],pieceTake=null,micStream=null,micAnalyser=null,micLoop=null,singSince=0;
+let hand='right',group=0,position=0,locked=false,audio=null,timer=null,courseIndex=0,pieceIndex=null,freeNote=null,drawerMode='course',pieceDone={right:false,left:false},playing=false,playTimers=[],playbackOrigin=null,micStream=null,micAnalyser=null,micLoop=null,singSince=0;
 let gameMode=false,game=null,gameTick=null,gameAdvance=null,gameFeedbackTimer=null;
 const GAME_DURATION=60000,GAME_RANKING_KEY='mars-piano-note-game-v1';
 const voices=new Map(),$=s=>document.querySelector(s);
 const pianoSampleNotes='C2 D2 E2 F2 G2 G#2 A2 A#2 B2 C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 G#4 A4 A#4 B4 C#5 D5 D#5 E5 F5 F#5 G5 G#5 A5 A#5 B5 C6 C#6 D6 D#6 F6 F#6 G6 G#6 A6 A#6'.split(' ');
 const pianoBuffers=new Map();let pianoPreloadStarted=false,pianoOutput=null;
 const notes=()=>hand==='right'?['C4','D4','E4','F4','G4','A4','B4','C5']:['C3','D3','E3','F3','G3','A3','B3','C4'];
-const groups=()=>pieceIndex!==null?MUSIC_PIECES[pieceIndex].hands[hand]:courseIndex!==null?COURSE_LESSONS[courseIndex].groups:[[]];
+const groups=()=>pieceIndex!==null?(hand==='both'?bothHandGroups():MUSIC_PIECES[pieceIndex].hands[hand]):courseIndex!==null?COURSE_LESSONS[courseIndex].groups:[[]];
 const phrase=()=>groups()[group]||[],current=()=>phrase()[position];
 const stepOf=item=>item&&item.rest?null:typeof item==='number'?item:item.step;
 const alterOf=item=>typeof item==='number'?'':item?.alter||'';
@@ -26,12 +26,14 @@ function closestPianoSample(note){let best=null,distance=Infinity;for(const samp
 function stopTone(key){const v=voices.get(key);if(!v||!audio)return;v.gain.gain.cancelScheduledValues(audio.currentTime);v.gain.gain.setTargetAtTime(.0001,audio.currentTime,v.sampled ? .19 : .09);try{v.node.stop(audio.currentTime+(v.sampled ? .85 : .35))}catch{}voices.delete(key)}
 function startTone(note,key){if(!note)return;ensureAudio();if(!audio)return;stopTone(key);const anchor=closestPianoSample(note),gain=audio.createGain(),node=anchor?audio.createBufferSource():audio.createOscillator();if(anchor){node.buffer=pianoBuffers.get(anchor);node.playbackRate.value=Math.pow(2,(midi(note)-midi(anchor))/12)}else{node.type='triangle';node.frequency.value=frequency(note)}gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(anchor ? .68 : .19,audio.currentTime+(anchor ? .006 : .025));node.connect(gain).connect(pianoOutput||audio.destination);node.start();voices.set(key,{node,gain,sampled:!!anchor})}
 function ping(note){startTone(note,'preview');setTimeout(()=>stopTone('preview'),500)}
-function renderPieceStaff(){
- const piece=MUSIC_PIECES[pieceIndex],measures=groups(),barLength=measureLength(piece.meter),[count,denominator]=meterParts(piece.meter);
+function renderPieceStaff(side=hand){
+ if(side==='both'){const upper=renderPieceStaff('right'),lower=renderPieceStaff('left');$('#staff').innerHTML=upper+lower;bindPiecePreviews();return}
+
+ const piece=MUSIC_PIECES[pieceIndex],measures=piece.hands[side],barLength=measureLength(piece.meter),[count,denominator]=meterParts(piece.meter);
  const naturalIndex=note=>{const match=/^([A-G])#?(\d)$/.exec(note);return Number(match[2])*7+'CDEFGAB'.indexOf(match[1])};
- const bottomIndex=naturalIndex(hand==='right'?'E4':'G2');
+ const bottomIndex=naturalIndex(side==='right'?'E4':'G2');
  const rows=[];
- for(let row=0;row<Math.ceil(measures.length/2);row++){
+ for(let row=Math.floor(group/2);row<=Math.floor(group/2);row++){
   const first=row*2,last=Math.min(first+2,measures.length);
   const lines=[48,64,80,96,112].map(y=>`<line x1="73" x2="806" y1="${y}" y2="${y}" stroke="#8cabc9" stroke-width="2.6"/>`).join('');
   const signature=`<text x="150" y="77" text-anchor="middle" font-size="27" font-weight="900" fill="#4777a3">${count}</text><text x="150" y="108" text-anchor="middle" font-size="27" font-weight="900" fill="#4777a3">${denominator}</text>`;
@@ -40,22 +42,26 @@ function renderPieceStaff(){
    const background=measureIndex===group?`<rect x="${base+3}" y="33" width="307" height="129" rx="12" fill="#dff4ff" opacity=".65"/>`:measureIndex<group?`<rect x="${base+3}" y="33" width="307" height="129" rx="12" fill="#e9fbf4" opacity=".55"/>`:'';
    const heading=`<text x="${base+18}" y="23" font-size="16" font-weight="900" fill="${measureIndex===group?'#137da5':'#5d83a0'}">第 ${measureIndex+1} 小节</text>`;
    const notes=items.map((item,i)=>{
-    const beat=beatOf(item,i),x=base+18+(onsets[i]+beat/2)/barLength*276,y=item?.rest?80:112-8*(naturalIndex(writtenPitchOf(item))-bottomIndex);
-    const fill=measureIndex<group||measureIndex===group&&i<position?'#2ba978':measureIndex===group&&i===position?'#167fca':'#8faac6';
+    const beat=beatOf(item,i),x=base+18+(onsets[i]+beat/2)/barLength*276,y=item?.rest?80:112-8*(naturalIndex(item.pitch)-bottomIndex);
+    const practiceIndex=hand==='both'?groups()[measureIndex].findIndex(event=>event.side===side&&event.sideIndex===i):i;
+    const fill=measureIndex<group||measureIndex===group&&practiceIndex<position?'#2ba978':measureIndex===group&&practiceIndex===position?'#167fca':'#8faac6';
     const ledger=item?.rest?'':Array.from({length:Math.max(0,Math.floor((y-112)/16))},(_,n)=>`<line x1="${x-23}" x2="${x+24}" y1="${128+n*16}" y2="${128+n*16}" stroke="#8cabc9" stroke-width="2.4"/>`).join('')+Array.from({length:Math.max(0,Math.floor((48-y)/16))},(_,n)=>`<line x1="${x-23}" x2="${x+24}" y1="${32-n*16}" y2="${32-n*16}" stroke="#8cabc9" stroke-width="2.4"/>`).join('');
     const accidental=item?.pitch?.includes('#')?'♯':item?.pitch?.includes('b')?'♭':'';
     const accidentalGlyph=accidental?`<text x="${x-30}" y="${y+8}" font-size="26" font-weight="800" fill="${fill}">${accidental}</text>`:'';
     const head=item?.rest?`<path d="M ${x+7} ${y-24} l -14 16 l 16 8 l -14 16" fill="none" stroke="${fill}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`:beat>=2?`<ellipse cx="${x}" cy="${y}" rx="12" ry="9" fill="none" stroke="${fill}" stroke-width="3.2"/>`:`<ellipse cx="${x}" cy="${y}" rx="12" ry="9" fill="${fill}"/>`;
     const down=y<56,stem=item?.rest||beat>=4?'':down?`<line x1="${x-11}" x2="${x-11}" y1="${y}" y2="${y+38}" stroke="${fill}" stroke-width="2.7"/>`:`<line x1="${x+11}" x2="${x+11}" y1="${y}" y2="${y-38}" stroke="${fill}" stroke-width="2.7"/>`;
     const flag=item?.rest||beat>.5?'':down?`<path d="M ${x-11} ${y+38} Q ${x+11} ${y+24} ${x+5} ${y+11}" fill="none" stroke="${fill}" stroke-width="2.7"/>`:`<path d="M ${x+11} ${y-38} Q ${x+32} ${y-25} ${x+25} ${y-12}" fill="none" stroke="${fill}" stroke-width="2.7"/>`;
-    return `<g class="score-note" data-measure="${measureIndex}" data-index="${i}" role="button" tabindex="0" aria-label="试听第 ${measureIndex+1} 小节 ${labelOf(item)}"><rect x="${x-23}" y="${Math.min(y-48,48)}" width="46" height="${Math.max(72,y+30-Math.min(y-48,48))}" fill="transparent"/>${ledger}${accidentalGlyph}${stem}${flag}${head}<text x="${x}" y="156" text-anchor="middle" font-size="15" font-weight="800" fill="${fill}">${labelOf(item)}</text></g>`
+    return `<g class="score-note" data-side="${side}" data-measure="${measureIndex}" data-index="${i}" role="button" tabindex="0" aria-label="试听第 ${measureIndex+1} 小节 ${labelOf(item)}"><rect x="${x-23}" y="${Math.min(y-48,48)}" width="46" height="${Math.max(72,y+30-Math.min(y-48,48))}" fill="transparent"/>${ledger}${accidentalGlyph}${stem}${flag}${head}<text x="${x}" y="156" text-anchor="middle" font-size="15" font-weight="800" fill="${fill}">${labelOf(item)}</text></g>`
    }).join('');
    return `${background}${heading}<line x1="${base}" x2="${base}" y1="48" y2="112" stroke="#638aa6" stroke-width="2.5"/><line x1="${base+313}" x2="${base+313}" y1="48" y2="112" stroke="#638aa6" stroke-width="2.5"/>${notes}`;
   }).join('');
-  rows.push(`<svg class="score-line" viewBox="0 0 820 168" preserveAspectRatio="none" role="img" aria-label="${piece.title}，${hand==='right'?'右手':'左手'}，第 ${first+1} 至 ${last} 小节"><text x="85" y="113" font-family="Georgia,serif" font-size="91" fill="#4576a2">${hand==='right'?'𝄞':'𝄢'}</text>${signature}${lines}${bars}</svg>`);
+  rows.push(`<svg class="score-line" viewBox="0 0 820 168" preserveAspectRatio="none" role="img" aria-label="${piece.title}，${side==='right'?'右手':'左手'}，第 ${first+1} 至 ${last} 小节"><text x="85" y="113" font-family="Georgia,serif" font-size="91" fill="#4576a2">${side==='right'?'𝄞':'𝄢'}</text>${signature}${lines}${bars}</svg>`);
  }
- $('#staff').innerHTML=rows.join('');
- $('#staff').querySelectorAll('.score-note').forEach(el=>{const preview=()=>previewStaffNote(Number(el.dataset.index),Number(el.dataset.measure));el.addEventListener('click',preview);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();preview()}})});
+ if(hand==='both')return rows.join('');
+ $('#staff').innerHTML=rows.join('');bindPiecePreviews();
+}
+function bindPiecePreviews(){
+ $('#staff').querySelectorAll('.score-note').forEach(el=>{const preview=()=>{const item=MUSIC_PIECES[pieceIndex].hands[el.dataset.side][Number(el.dataset.measure)][Number(el.dataset.index)];previewPitch(item.pitch)};el.addEventListener('click',preview);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();preview()}})})
 }
 function renderStaff(){
  $('#staff').classList.toggle('piece-score',pieceIndex!==null);
@@ -101,71 +107,23 @@ function keyPosition(b,v){const key=b.getBoundingClientRect(),viewport=v.getBoun
 function locate(){const target=gameMode?(game?.target||notes()[0]):pitchOf(current())||notes()[0],b=$(`#keyboard [data-note="${target}"]`),v=$('#keyboardViewport');if(b){const {center}=keyPosition(b,v);v.scrollTo({left:center-v.clientWidth/2,behavior:'smooth'})}}
 function revealCurrent(){const pitch=pitchOf(current()),b=pitch?$(`#keyboard [data-note="${pitch}"]`):null,v=$('#keyboardViewport');if(!b)return;const {left,right,center}=keyPosition(b,v);if(left<v.scrollLeft+12||right>v.scrollLeft+v.clientWidth-12)v.scrollTo({left:center-v.clientWidth/2,behavior:'smooth'})}
 function updateHint(){$('#keyboard').querySelectorAll('.target').forEach(b=>b.classList.remove('target'));$('#keyboard').querySelectorAll('[data-finger]').forEach(b=>b.removeAttribute('data-finger'));if(courseIndex!==null)notes().slice(0,5).forEach((note,i)=>{const b=$(`#keyboard [data-note="${note}"]`);if(b)b.dataset.finger=hand==='right'?i+1:5-i});if($('#hint').checked&&pitchOf(current()))$(`#keyboard [data-note="${pitchOf(current())}"]`)?.classList.add('target')}
-function render(centerFirst=false){stopPieceTake();clearTimeout(timer);locked=false;clearKeyColors();$('#groupCelebration').hidden=true;$('#feedback').textContent='';$('#nextBtn').hidden=true;document.body.classList.toggle('free-mode',courseIndex===null&&pieceIndex===null);document.body.classList.toggle('piece-mode',pieceIndex!==null);if(current()?.rest){$('#feedback').textContent='休止一拍 · 不按键';if(!playing)timer=setTimeout(advance,850)}$('#lessonBadge').hidden=courseIndex===null&&pieceIndex===null;if(courseIndex!==null)$('#lessonBadge').textContent=`${String(courseIndex+1).padStart(2,'0')} · ${COURSE_LESSONS[courseIndex].title} · ${group+1}/${groups().length} 组`;if(pieceIndex!==null)$('#lessonBadge').textContent=`${MUSIC_PIECES[pieceIndex].title} · ${hand==='right'?'右手':'左手'} · 第 ${group+1}/${groups().length} 小节`;renderStaff();updateHint();syncPieceControls();requestAnimationFrame(centerFirst?locate:revealCurrent);const dual=courseIndex!==null&&['降号 ♭','黑键的两个名字'].includes(COURSE_LESSONS[courseIndex].title);for(const octave of [2,3,4,5,6]){const key=$(`#keyboard [data-note="D#${octave}"] span`);if(key)key.innerHTML=dual?'D♯<br>E♭':'D♯'}}
-function judge(b){if(courseIndex===null&&pieceIndex===null||locked||playing)return;if(pieceIndex!==null){recordPieceNote(b);return}if(current()?.rest){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='休止时停一拍';return}$('#keyboard').querySelectorAll('.preview').forEach(k=>k.classList.remove('preview'));if(b.dataset.note!==pitchOf(current())){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='再试一次';return}locked=true;clearKeyColors();b.classList.add('correct');$('#feedback').textContent='✓';timer=setTimeout(advance,420)}
-function showCelebration(){locked=true;clearKeyColors();$('#keyboard').querySelectorAll('.target').forEach(b=>b.classList.remove('target'));const box=$('#groupCelebration');box.hidden=false;box.classList.add('finished');$('#celebrationProgress').innerHTML=Array.from({length:groups().length},()=>'<span class="done"></span>').join('');$('#nextBtn').hidden=false;if(pieceIndex!==null){pieceDone[hand]=true;const other=hand==='right'?'left':'right';$('#celebrationTitle').textContent='这一只手读完了';$('#celebrationGuide').textContent=pieceDone[other]?'双手谱都读完了！可以再读一遍，或选下一首。':`接下来试试${other==='right'?'右手':'左手'}谱。`;$('#nextBtn').textContent=pieceDone[other]?'再读这首 ↻':`练${other==='right'?'右手':'左手'} →`;return}$('#celebrationTitle').textContent='这节练完了';$('#celebrationGuide').textContent=courseIndex<COURSE_LESSONS.length-1?`接下来：${COURSE_LESSONS[courseIndex+1].title}`:'课程已完成，可以去曲子识谱试试。';$('#nextBtn').textContent=courseIndex<COURSE_LESSONS.length-1?'进入下一课 →':'去曲子识谱 →'}
+function render(centerFirst=false){clearTimeout(timer);locked=false;clearKeyColors();$('#groupCelebration').hidden=true;$('#feedback').textContent='';$('#nextBtn').hidden=true;document.body.classList.toggle('free-mode',courseIndex===null&&pieceIndex===null);document.body.classList.toggle('piece-mode',pieceIndex!==null);if(current()?.rest){$('#feedback').textContent='休止一拍 · 不按键';if(!playing)timer=setTimeout(advance,850)}$('#lessonBadge').hidden=courseIndex===null&&pieceIndex===null;if(courseIndex!==null)$('#lessonBadge').textContent=`${String(courseIndex+1).padStart(2,'0')} · ${COURSE_LESSONS[courseIndex].title} · ${group+1}/${groups().length} 组`;if(pieceIndex!==null)$('#lessonBadge').textContent=`${MUSIC_PIECES[pieceIndex].title} · ${hand==='both'?'双手':hand==='right'?'右手':'左手'} · 第 ${group+1}/${groups().length} 小节`;renderStaff();updateHint();syncPieceControls();requestAnimationFrame(centerFirst?locate:revealCurrent);const dual=courseIndex!==null&&['降号 ♭','黑键的两个名字'].includes(COURSE_LESSONS[courseIndex].title);for(const octave of [2,3,4,5,6]){const key=$(`#keyboard [data-note="D#${octave}"] span`);if(key)key.innerHTML=dual?'D♯<br>E♭':'D♯'}}
+function judge(b){if(courseIndex===null&&pieceIndex===null||locked||playing)return;if(current()?.rest){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='休止时停一拍';return}$('#keyboard').querySelectorAll('.preview').forEach(k=>k.classList.remove('preview'));if(b.dataset.note!==pitchOf(current())){b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),1400);$('#feedback').textContent='再试一次';return}locked=true;clearKeyColors();b.classList.add('correct');$('#feedback').textContent='✓';timer=setTimeout(advance,420)}
+function showCelebration(){locked=true;clearKeyColors();$('#keyboard').querySelectorAll('.target').forEach(b=>b.classList.remove('target'));const box=$('#groupCelebration');box.hidden=false;box.classList.add('finished');$('#celebrationProgress').innerHTML=Array.from({length:groups().length},()=>'<span class="done"></span>').join('');$('#nextBtn').hidden=false;if(pieceIndex!==null){if(hand==='both'){$('#celebrationTitle').textContent='双手谱读完了';$('#celebrationGuide').textContent='再读一遍，或回首页选另一首。';$('#nextBtn').textContent='再读这首 ↻';return}pieceDone[hand]=true;const other=hand==='right'?'left':'right';$('#celebrationTitle').textContent='这一只手读完了';$('#celebrationGuide').textContent=pieceDone[other]?'双手谱都读完了！可以再读一遍，或选下一首。':`接下来试试${other==='right'?'右手':'左手'}谱。`;$('#nextBtn').textContent=pieceDone[other]?'再读这首 ↻':`练${other==='right'?'右手':'左手'} →`;return}$('#celebrationTitle').textContent='这节练完了';$('#celebrationGuide').textContent=courseIndex<COURSE_LESSONS.length-1?`接下来：${COURSE_LESSONS[courseIndex+1].title}`:'课程已完成，可以去曲子识谱试试。';$('#nextBtn').textContent=courseIndex<COURSE_LESSONS.length-1?'进入下一课 →':'去曲子识谱 →'}
 function advance(){if(position<phrase().length-1){position++;render()}else if(group<groups().length-1){group++;position=0;render()}else showCelebration()}
 function reset(){group=0;position=0;render(true)}
 function clearKeyColors(){$('#keyboard').querySelectorAll('.correct,.wrong,.preview').forEach(k=>k.classList.remove('correct','wrong','preview'))}
 function syncPieceControls(){
  const isPiece=pieceIndex!==null;
- $('#beatBtn').hidden=!isPiece;
+ document.querySelectorAll('.both-hand').forEach(b=>b.hidden=!isPiece);
  $('#singBtn').hidden=isPiece;
  $('#hearBtn').hidden=isPiece;
- $('#playBtn').setAttribute('aria-label',isPiece?'听整小节示范':'自动播放');
- if(!pieceTake&&!locked)$('#beatBtn').disabled=false;
- if(!playing)$('#playBtn').textContent=isPiece?'▶ 听小节':'▶ 示范';
- if(isPiece&&!pieceTake&&!locked)$('#feedback').textContent='先听整小节，再跟拍弹奏';
+ $('#playBtn').setAttribute('aria-label',isPiece?'试听全曲':'自动播放');
+ if(!playing)$('#playBtn').textContent=isPiece?'▶ 试听全曲':'▶ 示范';
+ if(isPiece&&!locked)$('#feedback').textContent='跟着高亮音符弹奏，按对就继续，不限节奏';
 }
-function stopPieceTake(){
- if(!pieceTake)return;
- for(const id of pieceTake.timers)clearTimeout(id);
- pieceTake=null;
- $('#beatBtn').disabled=false;
- $('#beatBtn').textContent='♩ 跟拍练一小节';
-}
-function metronomeClick(accent=false){
- ensureAudio();if(!audio)return;
- const tone=audio.createOscillator(),gain=audio.createGain(),now=audio.currentTime;
- tone.type='sine';tone.frequency.value=accent?880:660;
- gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.065,now+.004);gain.gain.exponentialRampToValueAtTime(.0001,now+.07);
- tone.connect(gain).connect(pianoOutput||audio.destination);tone.start(now);tone.stop(now+.08);
-}
-function startPieceTake(){
- if(pieceIndex===null||locked||!$('#groupCelebration').hidden)return;
- if(pieceTake){stopPieceTake();$('#feedback').textContent='已停止，点跟拍可重来';return}
- stopPlayback();stopSinging();clearTimeout(timer);clearKeyColors();ensureAudio();
- const p=phrase(),meter=MUSIC_PIECES[pieceIndex].meter,[count,denominator]=meterParts(meter),unit=4/denominator,beatMs=850,onsets=noteOnsets(p);
- const take={phase:'countin',timers:[],matches:new Set(),wrong:0,startedAt:0,beatMs,onsets};
- pieceTake=take;position=0;renderStaff();updateHint();
- $('#beatBtn').textContent='■ 停止跟拍';
- const later=(fn,delay)=>take.timers.push(setTimeout(()=>{if(pieceTake===take)fn()},delay));
- for(let i=0;i<count;i++)later(()=>{metronomeClick(i===0);$('#feedback').textContent=`预备 ${i+1} / ${count}`},i*unit*beatMs);
- later(()=>{
-  take.phase='playing';take.startedAt=performance.now();$('#feedback').textContent='跟着节拍，弹完整小节';
-  for(let i=0;i<count;i++)later(()=>metronomeClick(i===0),i*unit*beatMs);
-  onsets.forEach((onset,i)=>later(()=>{position=i;renderStaff();updateHint()},onset*beatMs));
-  later(finishPieceTake,measureLength(meter)*beatMs+220);
- },count*unit*beatMs);
-}
-function recordPieceNote(b){
- if(!pieceTake){$('#feedback').textContent='先听示范，再点「跟拍练一小节」';return}
- if(pieceTake.phase!=='playing'){$('#feedback').textContent='等预备拍结束再弹';return}
- const take=pieceTake,when=(performance.now()-take.startedAt)/take.beatMs;
- const i=phrase().findIndex((item,index)=>!take.matches.has(index)&&pitchOf(item)===b.dataset.note&&Math.abs(take.onsets[index]-when)<=.36);
- if(i>=0){take.matches.add(i);b.classList.add('correct');$('#feedback').textContent=`按准 ${take.matches.size} / ${phrase().length} 个音 · 继续跟拍`}
- else{take.wrong++;b.classList.add('wrong');$('#feedback').textContent='继续听拍点，弹完整小节'}
- setTimeout(()=>b.classList.remove('correct','wrong'),240);
-}
-function finishPieceTake(){
- const take=pieceTake;if(!take)return;
- const matched=take.matches.size,total=phrase().length,passed=matched===total&&take.wrong<=1;
- stopPieceTake();clearKeyColors();
- if(!passed){position=0;renderStaff();updateHint();$('#feedback').textContent=`本小节按准 ${matched} / ${total} 个音，跟拍再练一次`;return}
- locked=true;$('#beatBtn').disabled=true;$('#feedback').textContent='✓ 整小节的音和节拍都完成了';
- timer=setTimeout(()=>{if(group<groups().length-1){group++;position=0;render(true)}else showCelebration()},900);
-}
-function previewStaffNote(i,measure=group){const item=courseIndex===null&&pieceIndex===null?(freeNote?{pitch:freeNote}:null):groups()[measure]?.[i],pitch=pitchOf(item);if(!pitch){$('#feedback').textContent='休止一拍';return}const b=$(`#keyboard [data-note="${pitch}"]`);if(!b)return;clearKeyColors();b.classList.add('preview');ping(pitch)}
+function previewStaffNote(i,measure=group){const item=courseIndex===null&&pieceIndex===null?(freeNote?{pitch:freeNote}:null):groups()[measure]?.[i],pitch=pitchOf(item);if(!pitch){$('#feedback').textContent='休止一拍';return}previewPitch(pitch)}
+function previewPitch(pitch){const b=$(`#keyboard [data-note="${pitch}"]`);if(!b)return;clearKeyColors();b.classList.add('preview');ping(pitch)}
 function gameRanks(){try{const saved=JSON.parse(localStorage.getItem(GAME_RANKING_KEY)||'[]');return Array.isArray(saved)?saved.filter(row=>row&&typeof row.name==='string'&&Number.isFinite(row.score)).slice(0,10):[]}catch{return []}}
 function renderGameRanks(){const list=$('#gameRankingList');list.replaceChildren();const ranks=gameRanks();if(!ranks.length){const row=document.createElement('li');row.textContent='还没有成绩，开始第一局吧！';list.append(row);return}ranks.forEach((entry,index)=>{const row=document.createElement('li'),place=document.createElement('span'),name=document.createElement('span'),score=document.createElement('strong');place.textContent=`${index+1}.`;name.textContent=entry.name.slice(0,12);score.textContent=`${entry.score} 分`;row.append(place,name,score);list.append(row)})}
 function saveGameRank(){const entry={name:$('#gameName').value.trim().slice(0,12)||'小小琴探险家',score:game.score,streak:game.best,at:Date.now()};const ranks=[...gameRanks(),entry].sort((a,b)=>b.score-a.score||b.streak-a.streak||a.at-b.at).slice(0,10);try{localStorage.setItem(GAME_RANKING_KEY,JSON.stringify(ranks))}catch{$('#gameMessage').textContent='本局完成，浏览器未允许保存排行榜。'}renderGameRanks()}
@@ -196,7 +154,7 @@ function updateGameHud(){
  const active=game.status==='playing'||game.status==='celebrating';
  document.body.classList.toggle('game-running',active);
  const remaining=active?Math.max(0,Math.ceil((game.deadline-performance.now())/1000)):game.status==='finished'?0:60;
- const progress=$('#gameProgress');progress.hidden=!active;progress.setAttribute('aria-valuenow',String(remaining));$('#gameProgressFill').style.width=`${remaining/60*100}%`;
+ $('#gameStats').hidden=!active;$('#gameStats').textContent=`剩余 ${remaining} 秒 · 得分 ${game.score}`;
  $('#gameHand').textContent=hand==='right'?'右手':'左手';$('#gameStart').hidden=active;$('#gameStart').textContent=game.status==='finished'?'再玩一次':'开始弹音';$('#gameName').disabled=active;
  const records=$('#gameLeaderboard');records.hidden=active;if(active)records.open=false;
  document.querySelectorAll('[data-hand]').forEach(button=>button.disabled=active)
@@ -228,7 +186,7 @@ function judgeGame(key){
 }
 function revealGameNote(){const key=$(`#keyboard [data-note="${game?.target}"]`),view=$('#keyboardViewport');if(!key)return;const {left,right,center}=keyPosition(key,view);if(left<view.scrollLeft+10||right>view.scrollLeft+view.clientWidth-10)view.scrollTo({left:center-view.clientWidth/2,behavior:'smooth'})}
 function enterGame(){
- clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}
+ clearTimeout(timer);stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}
  clearInterval(gameTick);clearTimeout(gameAdvance);clearTimeout(gameFeedbackTimer);hand='right';document.querySelectorAll('[data-hand]').forEach(button=>{button.disabled=false;button.classList.toggle('selected',button.dataset.hand===hand)});
  courseIndex=null;pieceIndex=null;freeNote=null;gameMode=true;game={status:'idle',target:pickGameNote(),visual:null,score:0,streak:0,best:0,correct:0,wrong:0,deadline:0};
  document.body.classList.remove('show-home','free-mode','piece-mode');document.body.classList.add('game-mode');$('#courseDrawer').hidden=true;$('#gamePanel').hidden=false;$('#gameResult').hidden=true;$('#lessonBadge').hidden=true;$('#groupCelebration').hidden=true;
@@ -236,8 +194,8 @@ function enterGame(){
  clearKeyColors();updateHint();renderGameRanks();updateGameHud();renderGameStaff();requestAnimationFrame(locate)
 }
 function leaveGame(){if(!gameMode)return;clearInterval(gameTick);gameTick=null;clearTimeout(gameAdvance);gameAdvance=null;clearTimeout(gameFeedbackTimer);gameFeedbackTimer=null;gameMode=false;game=null;courseIndex=0;pieceIndex=null;freeNote=null;document.body.classList.remove('game-mode','game-running');$('#gamePanel').hidden=true;$('#gameResult').hidden=true;$('#gameLeaderboard').hidden=true;document.querySelectorAll('[data-hand]').forEach(button=>button.disabled=false);render()}
-function enterPractice(){document.body.classList.remove('show-home');requestAnimationFrame(locate)}
-function showHome(){leaveGame();clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}document.body.classList.add('show-home');$('#courseDrawer').hidden=true;applyPendingUpdate()}
+function enterPractice(){window.scrollTo(0,0);document.body.classList.remove('show-home');requestAnimationFrame(locate)}
+function showHome(){leaveGame();clearTimeout(timer);stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}document.body.classList.add('show-home');$('#courseDrawer').hidden=true;applyPendingUpdate()}
 function chooseHand(next){
  if(gameMode){
   if(game.status==='playing'||game.status==='celebrating')return;
@@ -255,31 +213,26 @@ try{const size=JSON.parse(localStorage.getItem('mars-piano-keyboard-size')||'nul
 for(const id of ['keyWidth','keyHeight'])$('#'+id).oninput=()=>{applyKeyboardSize();saveKeyboardSize()};
 applyKeyboardSize();
 $('#hearBtn').onclick=()=>ping(pitchOf(current()));
-$('#nextBtn').onclick=()=>{if(pieceIndex!==null){const other=hand==='right'?'left':'right';if(!pieceDone[other])chooseHand(other);else reset();return}if(courseIndex<COURSE_LESSONS.length-1){selectCourse(courseIndex+1);$('#courseDrawer').hidden=true}else openDrawer('pieces')};
+$('#nextBtn').onclick=()=>{if(pieceIndex!==null){if(hand==='both'){reset();return}const other=hand==='right'?'left':'right';if(!pieceDone[other])chooseHand(other);else reset();return}if(courseIndex<COURSE_LESSONS.length-1){selectCourse(courseIndex+1);$('#courseDrawer').hidden=true}else openDrawer('pieces')};
 $('#playBtn').onclick=()=>playing?stopPlayback():playDemo();
-$('#beatBtn').onclick=startPieceTake;
 $('#singBtn').onclick=()=>micStream?stopSinging():startSinging();
-$('#courseBtn').onclick=()=>openDrawer('course');
-$('#pieceBtn').onclick=()=>openDrawer('pieces');
-$('#gameBtn').onclick=enterGame;
 $('#gameStart').onclick=startGame;
 $('#gameExit').onclick=showHome;
 $('#closeCourse').onclick=()=>{if(narrationAudio){narrationAudio.pause();narrationAudio=null}$('#courseDrawer').hidden=true};
-$('#homeBtn').onclick=showHome;
 $('#homeCourseBtn').onclick=()=>openDrawer('course');
 $('#homeContinueBtn').onclick=$('#homeCourseBtn').onclick;
-$('#homeExploreBtn').onclick=()=>{courseIndex=null;pieceIndex=null;freeNote=null;stopPlayback();stopSinging();reset();enterPractice()};
+$('#homeExploreBtn').onclick=()=>{stopPlayback();courseIndex=null;pieceIndex=null;freeNote=null;stopSinging();reset();enterPractice()};
 $('#homePracticeBtn').onclick=()=>openDrawer('pieces');
 $('#homeGameBtn').onclick=enterGame;
 $('#refreshBtn').onclick=()=>{const url=new URL(location.href);url.searchParams.set('refresh',String(Date.now()));url.hash='';$('#refreshBtn').textContent='正在更新…';location.replace(url.href)};
 if(window.pianoRefreshToken){$('#refreshBtn').textContent='✓ 已刷新最新版';setTimeout(()=>$('#refreshBtn').textContent='↻ 刷新最新版',3500)}
-$('#shapeBtn').onclick=()=>$('#shapeModal').hidden=false;
-$('#closeModal').onclick=()=>$('#shapeModal').hidden=true;
-$('#shapeModal').onclick=e=>{if(e.target.id==='shapeModal')e.target.hidden=true};
-document.onkeydown=e=>{if(e.key==='Escape'){$('#shapeModal').hidden=true;$('#courseDrawer').hidden=true}};
+
+
+
+document.onkeydown=e=>{if(e.key==='Escape'){$('#courseDrawer').hidden=true}};
 renderKeyboard();renderCourseList();render();preloadPianoSamples();requestAnimationFrame(locate);
 function openDrawer(type){
- leaveGame();drawerMode=type;clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();
+ leaveGame();drawerMode=type;clearTimeout(timer);stopPlayback();stopSinging();
  $('#courseDrawer').classList.toggle('piece-picker',type==='pieces');
  $('#courseDrawer').classList.toggle('course-picker',type==='course');
  if(type==='course'){enterPractice();renderCourseList()}
@@ -297,19 +250,19 @@ function renderPieceList(){
 }
 function selectPiece(i){
  if(narrationAudio){narrationAudio.pause();narrationAudio=null}
- stopPieceTake();stopPlayback();stopSinging();courseIndex=null;pieceIndex=i;hand='right';
+ stopPlayback();stopSinging();courseIndex=null;pieceIndex=i;hand='right';
  document.querySelectorAll('[data-hand]').forEach(b=>b.classList.toggle('selected',b.dataset.hand===hand));
  pieceDone={right:false,left:false};group=0;position=0;render(true);
 }
-function stopPlayback(){for(const id of playTimers)clearTimeout(id);playTimers=[];for(const key of [...voices.keys()])if(String(key).startsWith('demo'))stopTone(key);$('#keyboard').querySelectorAll('.demo').forEach(b=>b.classList.remove('demo'));playing=false;$('#playBtn').textContent=pieceIndex!==null?'▶ 听小节':'▶ 示范'}
-function playDemo(){if(courseIndex===null&&pieceIndex===null||locked)return;if(!$('#groupCelebration').hidden)return;stopPieceTake();stopSinging();playing=true;$('#playBtn').textContent='■ 停止';const savedGroup=group,savedPosition=position,p=phrase().slice();let delay=0;p.forEach((item,i)=>{const duration=Math.max(.5,beatOf(item,i))*510,key='demo'+i;playTimers.push(setTimeout(()=>{position=i;render();const note=pitchOf(item);if(note)startTone(note,key);const b=note?$(`#keyboard [data-note="${note}"]`):null;b?.classList.add('demo');playTimers.push(setTimeout(()=>{stopTone(key);b?.classList.remove('demo')},duration*.82))},delay));delay+=duration});playTimers.push(setTimeout(()=>{playing=false;group=savedGroup;position=savedPosition;render();$('#playBtn').textContent=pieceIndex!==null?'▶ 听小节':'▶ 示范'},delay+150))}
+function stopPlayback(){for(const id of playTimers)clearTimeout(id);playTimers=[];for(const key of [...voices.keys()])if(String(key).startsWith('demo'))stopTone(key);$('#keyboard').querySelectorAll('.demo').forEach(b=>b.classList.remove('demo'));playing=false;if(playbackOrigin){({group,position}=playbackOrigin);playbackOrigin=null;render()}$('#playBtn').textContent=pieceIndex!==null?'▶ 试听全曲':'▶ 示范'}
+function playDemo(){if(courseIndex===null&&pieceIndex===null||locked)return;stopSinging();playing=true;const savedGroup=group,savedPosition=position;playbackOrigin={group,position};const bars=pieceIndex!==null?groups():[phrase()];let delay=0;bars.forEach((bar,m)=>{bar.forEach((item,i)=>{const duration=Math.max(.5,beatOf(item,i))*510,key='demo'+m+'-'+i;const onset=hand==='both'&&pieceIndex!==null?item.onset*510:null;const start=delay+(onset||0);playTimers.push(setTimeout(()=>{group=pieceIndex!==null?m:savedGroup;position=i;render();$('#playBtn').textContent='■ 停止';const note=pitchOf(item);if(note)startTone(note,key);playTimers.push(setTimeout(()=>stopTone(key),duration*.82))},start));if(onset===null)delay+=duration});if(hand==='both'&&pieceIndex!==null)delay+=measureLength(MUSIC_PIECES[pieceIndex].meter)*510});playTimers.push(setTimeout(()=>{stopPlayback()},delay+150))}
 async function startSinging(){if(courseIndex===null&&pieceIndex===null)return;stopPlayback();try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});ensureAudio();const source=audio.createMediaStreamSource(micStream);micAnalyser=audio.createAnalyser();micAnalyser.fftSize=2048;source.connect(micAnalyser);$('#singBtn').textContent='■ 停止试唱';$('#feedback').textContent='唱当前音';singSince=0;micLoop=setInterval(checkSinging,80)}catch{micStream=null;$('#feedback').textContent='需允许麦克风（HTTPS）'}}
 function stopSinging(){if(micLoop)clearInterval(micLoop);micLoop=null;if(micStream)micStream.getTracks().forEach(t=>t.stop());micStream=null;micAnalyser=null;$('#singBtn').textContent='🎙 试唱';singSince=0}
 function detectPitch(){if(!micAnalyser||!audio)return null;const data=new Float32Array(micAnalyser.fftSize);micAnalyser.getFloatTimeDomainData(data);let rms=0;for(const v of data)rms+=v*v;rms=Math.sqrt(rms/data.length);if(rms<.018)return null;let best=0,bestScore=0;const min=Math.floor(audio.sampleRate/900),max=Math.min(Math.floor(audio.sampleRate/100),data.length/2);for(let lag=min;lag<=max;lag++){let sum=0,a=0,b=0;for(let i=0;i<data.length-lag;i+=2){const x=data[i],y=data[i+lag];sum+=x*y;a+=x*x;b+=y*y}const score=sum/Math.sqrt(a*b||1);if(score>bestScore){bestScore=score;best=lag}}return bestScore>.82?audio.sampleRate/best:null}
 function checkSinging(){if(locked||playing)return;const heard=detectPitch();if(!heard){singSince=0;return}const sung=69+12*Math.log2(heard/440),target=midi(pitchOf(current()));const distance=Math.abs((((sung-target)%12)+18)%12-6);if(distance<.8){if(!singSince)singSince=Date.now();if(Date.now()-singSince>320){singSince=0;judge({dataset:{note:pitchOf(current())},classList:{add(){}}})}}else{singSince=0;$('#feedback').textContent='再听，再唱'}}
 
 let narrationAudio=null;function playNarration(i){if(narrationAudio){narrationAudio.pause();narrationAudio=null;return}narrationAudio=new Audio(pianoAssetUrl(`assets/voice/lesson-${String(COURSE_LESSONS[i].voiceId).padStart(2,'0')}.m4a`));narrationAudio.onended=()=>{narrationAudio=null};narrationAudio.onerror=()=>{$('#feedback').textContent='讲解暂不可播放';narrationAudio=null};narrationAudio.play().catch(()=>{$('#feedback').textContent='请点按后播放';narrationAudio=null})}
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}}});window.addEventListener('pagehide',()=>{stopPieceTake();stopPlayback();stopSinging();if(narrationAudio)narrationAudio.pause()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}}});window.addEventListener('pagehide',()=>{stopPlayback();stopSinging();if(narrationAudio)narrationAudio.pause()});
 window.addEventListener('resize',()=>{if(gameMode)renderGameStaff()});
 
 // Home-screen launches and restored pages recheck the release without touching learning records.
@@ -319,3 +272,7 @@ async function checkPianoVersion(){if(versionCheckInFlight||document.hidden)retu
 window.addEventListener('pageshow',checkPianoVersion);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkPianoVersion()});
 checkPianoVersion();
+
+function bothHandGroups(){const piece=MUSIC_PIECES[pieceIndex];return piece.hands.right.map((bar,m)=>{const events=[];for(const side of ['right','left']){let onset=0;for(const [sideIndex,item] of piece.hands[side][m].entries()){const pitch=item.rest?null:item.pitch||(side==='right'?['C4','D4','E4','F4','G4','A4','B4','C5']:['C3','D3','E3','F3','G3','A3','B3','C4'])[typeof item==='number'?item:item.step];if(pitch)events.push({pitch,beats:item.beats||1,onset,side,sideIndex});onset+=item.beats||1}}return events.sort((a,b)=>a.onset-b.onset||(a.side==='right'?-1:1))})}
+$('#brandHome').onclick=showHome;
+for(const [id,axis,input,min,max,scale] of [['widthDrag','x','keyWidth',19,26,.04],['heightDrag','y','keyHeight',28,64,-.12]]){const handle=$('#'+id);let drag=null;handle.onpointerdown=e=>{e.preventDefault();handle.setPointerCapture(e.pointerId);drag={start:axis==='x'?e.clientX:e.clientY,value:Number($('#'+input).value)}};handle.onpointermove=e=>{if(!drag)return;const delta=(axis==='x'?e.clientX:e.clientY)-drag.start;$('#'+input).value=Math.max(min,Math.min(max,Math.round((drag.value+delta*scale)*2)/2));if(axis==='x')handle.style.transform=`translateX(${delta}px)`;applyKeyboardSize();saveKeyboardSize()};handle.onpointerup=handle.onpointercancel=handle.onlostpointercapture=()=>{drag=null;handle.style.transform=''};handle.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();$('#'+input).value=Math.max(min,Math.min(max,Number($('#'+input).value)+(['ArrowRight','ArrowUp'].includes(e.key)?.5:-.5)));applyKeyboardSize();saveKeyboardSize()}}
