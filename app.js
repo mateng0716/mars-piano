@@ -90,7 +90,7 @@ function renderKeyboard(){
  for(let oct=2;oct<=6;oct++)for(const letter of 'CDEFGAB')all.push(letter+oct);
  all.push('C7');
  const whites=all.map((note,i)=>`<button class="white-key" data-note="${note}" aria-label="${note} 琴键" style="left:calc(${i} * var(--key-width))"></button>`).join('');
- const blacks=all.slice(0,-1).flatMap((note,i)=>'EB'.includes(note[0])?[]:[`<button class="black-key" data-note="${note[0]}#${note.slice(1)}" aria-label="${note[0]}#${note.slice(1)} 黑键" style="left:calc(${i+1} * var(--key-width) - var(--black-width) / 2)"><span>${note[0]}♯</span></button>`]).join('');
+ const blacks=all.slice(0,-1).flatMap((note,i)=>'EB'.includes(note[0])?[]:[`<button class="black-key" data-note="${note[0]}#${note.slice(1)}" aria-label="${note[0]}#${note.slice(1)} 黑键" style="left:calc(${Math.floor(i/7)*7+({C:.86,D:2.14,F:3.8,G:5,A:6.2}[note[0]])} * var(--key-width) - var(--black-width) / 2)"><span>${note[0]}♯</span></button>`]).join('');
  $('#keyboard').innerHTML=whites+blacks;
  $('#keyboard').querySelectorAll('button').forEach(b=>{
   b.addEventListener('pointerdown',e=>{e.preventDefault();b.blur();b.setPointerCapture(e.pointerId);b.classList.add('active');if(!gameMode&&courseIndex===null&&pieceIndex===null){freeNote=b.dataset.note;renderStaff()}startTone(b.dataset.note,e.pointerId);if(gameMode)judgeGame(b);else judge(b)});
@@ -172,7 +172,7 @@ function saveGameRank(){const entry={name:$('#gameName').value.trim().slice(0,12
 function pickGameNote(previous){const choices=notes().filter(note=>note!==previous);return choices[Math.floor(Math.random()*choices.length)]}
 function renderGameStaff(){
  const note=game.target,right=hand==='right',visual=game.visual;
- const compact=window.innerWidth<=600,staffStart=compact?260:130,staffEnd=compact?640:760,clefX=compact?260:140,viewBox=compact?'225 0 450 176':'0 0 900 176';
+ const staffStart=230,staffEnd=670,clefX=235,viewBox='200 0 500 176';
  const naturalIndex=value=>Number(value.slice(-1))*7+'CDEFGAB'.indexOf(value[0]);
  const y=112-8*(naturalIndex(note)-naturalIndex(right?'E4':'G2'));
  const fill=visual==='correct'?'#20ad76':visual==='wrong'?'#e64d5e':'#247fad';
@@ -188,12 +188,13 @@ function gameCue(correct){ensureAudio();if(!audio)return;const now=audio.current
 function gameFeedback(kind,message,key){
  clearTimeout(gameFeedbackTimer);
  const result=$('#gameResult');result.hidden=false;result.className=`game-result ${kind}`;result.replaceChildren();
- const symbol=document.createElement('strong'),copy=document.createElement('span');symbol.textContent=kind==='correct'?'✓':'✕';copy.textContent=message;result.append(symbol,copy);
+ result.textContent=message;
  gameFeedbackTimer=setTimeout(()=>{key?.classList.remove('wrong');result.hidden=true;if(gameMode&&game?.visual==='wrong'){game.visual=null;renderGameStaff()}},540)
 }
 function updateGameHud(){
  if(!game)return;
  const active=game.status==='playing'||game.status==='celebrating';
+ document.body.classList.toggle('game-running',active);
  const remaining=active?Math.max(0,Math.ceil((game.deadline-performance.now())/1000)):game.status==='finished'?0:60;
  const progress=$('#gameProgress');progress.hidden=!active;progress.setAttribute('aria-valuenow',String(remaining));$('#gameProgressFill').style.width=`${remaining/60*100}%`;
  $('#gameHand').textContent=hand==='right'?'右手':'左手';$('#gameStart').hidden=active;$('#gameStart').textContent=game.status==='finished'?'再玩一次':'开始弹音';$('#gameName').disabled=active;
@@ -234,9 +235,9 @@ function enterGame(){
  $('#gameMessage').textContent='看音符，按下对应的琴键。弹错了可以再试。';$('#gameRecordSummary').textContent='玩完以后，这里会留下今天的记录。';$('#gameLeaderboard').open=false;
  clearKeyColors();updateHint();renderGameRanks();updateGameHud();renderGameStaff();requestAnimationFrame(locate)
 }
-function leaveGame(){if(!gameMode)return;clearInterval(gameTick);gameTick=null;clearTimeout(gameAdvance);gameAdvance=null;clearTimeout(gameFeedbackTimer);gameFeedbackTimer=null;gameMode=false;game=null;courseIndex=0;pieceIndex=null;freeNote=null;document.body.classList.remove('game-mode');$('#gamePanel').hidden=true;$('#gameResult').hidden=true;$('#gameLeaderboard').hidden=true;document.querySelectorAll('[data-hand]').forEach(button=>button.disabled=false);render()}
+function leaveGame(){if(!gameMode)return;clearInterval(gameTick);gameTick=null;clearTimeout(gameAdvance);gameAdvance=null;clearTimeout(gameFeedbackTimer);gameFeedbackTimer=null;gameMode=false;game=null;courseIndex=0;pieceIndex=null;freeNote=null;document.body.classList.remove('game-mode','game-running');$('#gamePanel').hidden=true;$('#gameResult').hidden=true;$('#gameLeaderboard').hidden=true;document.querySelectorAll('[data-hand]').forEach(button=>button.disabled=false);render()}
 function enterPractice(){document.body.classList.remove('show-home');requestAnimationFrame(locate)}
-function showHome(){leaveGame();clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}document.body.classList.add('show-home');$('#courseDrawer').hidden=true}
+function showHome(){leaveGame();clearTimeout(timer);stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}document.body.classList.add('show-home');$('#courseDrawer').hidden=true;applyPendingUpdate()}
 function chooseHand(next){
  if(gameMode){
   if(game.status==='playing'||game.status==='celebrating')return;
@@ -248,7 +249,11 @@ function chooseHand(next){
 document.querySelectorAll('[data-hand]').forEach(b=>b.onclick=()=>chooseHand(b.dataset.hand));
 $('#hint').onchange=updateHint;
 $('#locateBtn').onclick=locate;
-$('#keyWidth').oninput=e=>{document.documentElement.style.setProperty('--key-width',e.target.value+'mm');$('#keyWidthValue').textContent=e.target.value+' mm';requestAnimationFrame(locate)};
+function saveKeyboardSize(){try{localStorage.setItem('mars-piano-keyboard-size',JSON.stringify({width:Number($('#keyWidth').value),height:Number($('#keyHeight').value)}))}catch{}}
+function applyKeyboardSize(){document.documentElement.style.setProperty('--key-width',$('#keyWidth').value+'mm');document.documentElement.style.setProperty('--keyboard-share',$('#keyHeight').value+'%');$('#keyWidthValue').textContent=$('#keyWidth').value+' mm';$('#keyHeightValue').textContent=$('#keyHeight').value+'%';requestAnimationFrame(locate)}
+try{const size=JSON.parse(localStorage.getItem('mars-piano-keyboard-size')||'null');if(size&&Number.isFinite(size.width)&&size.width>=19&&size.width<=26)$('#keyWidth').value=size.width;if(size&&Number.isFinite(size.height)&&size.height>=28&&size.height<=64)$('#keyHeight').value=size.height}catch{}
+for(const id of ['keyWidth','keyHeight'])$('#'+id).oninput=()=>{applyKeyboardSize();saveKeyboardSize()};
+applyKeyboardSize();
 $('#hearBtn').onclick=()=>ping(pitchOf(current()));
 $('#nextBtn').onclick=()=>{if(pieceIndex!==null){const other=hand==='right'?'left':'right';if(!pieceDone[other])chooseHand(other);else reset();return}if(courseIndex<COURSE_LESSONS.length-1){selectCourse(courseIndex+1);$('#courseDrawer').hidden=true}else openDrawer('pieces')};
 $('#playBtn').onclick=()=>playing?stopPlayback():playDemo();
@@ -306,3 +311,11 @@ function checkSinging(){if(locked||playing)return;const heard=detectPitch();if(!
 let narrationAudio=null;function playNarration(i){if(narrationAudio){narrationAudio.pause();narrationAudio=null;return}narrationAudio=new Audio(pianoAssetUrl(`assets/voice/lesson-${String(COURSE_LESSONS[i].voiceId).padStart(2,'0')}.m4a`));narrationAudio.onended=()=>{narrationAudio=null};narrationAudio.onerror=()=>{$('#feedback').textContent='讲解暂不可播放';narrationAudio=null};narrationAudio.play().catch(()=>{$('#feedback').textContent='请点按后播放';narrationAudio=null})}
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stopPieceTake();stopPlayback();stopSinging();if(narrationAudio){narrationAudio.pause();narrationAudio=null}}});window.addEventListener('pagehide',()=>{stopPieceTake();stopPlayback();stopSinging();if(narrationAudio)narrationAudio.pause()});
 window.addEventListener('resize',()=>{if(gameMode)renderGameStaff()});
+
+// Home-screen launches and restored pages recheck the release without touching learning records.
+let pendingPianoVersion=null,versionCheckInFlight=false;
+function applyPendingUpdate(){if(!pendingPianoVersion||!document.body.classList.contains('show-home'))return;const url=new URL(location.href);url.searchParams.set('refresh',String(Date.now()));location.replace(url.href)}
+async function checkPianoVersion(){if(versionCheckInFlight||document.hidden)return;versionCheckInFlight=true;try{const response=await fetch('version.json?check='+Date.now(),{cache:'no-store'});if(response.ok){const latest=await response.json();if(typeof latest.version==='string'&&latest.version!==window.PIANO_RELEASE){pendingPianoVersion=latest.version;applyPendingUpdate()}}}catch{}finally{versionCheckInFlight=false}}
+window.addEventListener('pageshow',checkPianoVersion);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkPianoVersion()});
+checkPianoVersion();

@@ -191,12 +191,7 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
 .game-mode .staff.is-wrong .game-note{animation:game-shake .32s ease-in-out}
 .game-mode .staff.is-correct .game-note ellipse{filter:drop-shadow(0 0 9px #48dba5)}
 .game-particle{opacity:0;transform-box:fill-box;transform-origin:center;animation:game-burst .55s ease-out forwards;animation-delay:var(--delay)}
-.game-result{position:absolute;left:76%;top:51%;z-index:5;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:0;padding:4px 9px;border-radius:12px;background:#ffffffc9;color:#159e72;pointer-events:none;animation:game-pop .25s ease-out}
-.game-result strong{font-size:33px;line-height:1}
-.game-result span{font-size:12px;font-weight:900;white-space:nowrap}
-.game-result.wrong{color:#e7515c;background:#fff0f1e0}
-.game-result.correct{color:#16a76f;background:#edfff5e0}
-@keyframes game-pop{from{opacity:0;transform:translate(-50%,-45%) scale(.72)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.game-result{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;pointer-events:none}
 .game-leaderboard{display:block;border-top:1px solid #d6e9ec;padding:7px 3px 0;color:#315f79}
 .game-leaderboard summary{width:max-content;max-width:100%;cursor:pointer;color:#477a92;font-size:12px;font-weight:850}
 .game-leaderboard summary small{margin-left:8px;color:#8ba4b2;font-size:10px;font-weight:700}
@@ -216,3 +211,24 @@ html,body{height:100%;overflow:hidden}.app{height:100dvh;min-height:0;display:fl
 @media(max-width:650px){.show-home .home-cards{grid-template-columns:1fr;grid-template-rows:repeat(3,180px)}.show-home .home-card h2{font-size:24px}.game-panel-top{gap:4px}.game-actions{gap:4px}.game-name input{width:88px}.game-exit{padding:7px}}
 @media(max-height:700px){.game-mode .score-card{padding-top:5px;padding-bottom:4px}.game-mode .staff{height:130px}.game-record-body{max-height:70px}.game-mode .keyboard-viewport{min-height:29vh}}
 @media(prefers-reduced-motion:reduce){.game-result,.game-card,.game-particle,.game-mode .staff.is-wrong,.game-mode .staff.is-wrong .game-note{animation:none;transition:none}}
+
+/* The height control divides the available stage between notation and keys. */
+:root{--keyboard-share:45%}
+.play .keyboard-viewport{flex:0 0 var(--keyboard-share);height:auto;min-height:0;padding-top:0}
+.play .score-card{flex:1;min-height:0}
+.play .staff{height:100%;min-height:0}
+.game-mode .score-card{flex:1;min-height:0}
+.game-mode .staff{flex:1;height:auto;min-height:0}
+.game-mode .game-panel{flex:none}
+.game-running header{display:none}
+.game-running .app{padding-top:env(safe-area-inset-top,0px)}
+.game-running .game-panel-top>div:first-child{display:none}
+.game-running .game-panel-top{justify-content:flex-end}
+.game-running .game-message{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.game-running .game-exit{min-height:32px;padding:4px 10px;font-size:12px}
+.game-running .game-panel{position:relative}
+.keyboard-controls{min-height:34px;height:auto;flex-wrap:wrap;padding:3px 0;row-gap:4px}
+.key-height output{min-width:28px}
+.piece-mode .score-card{display:flex;flex-direction:column}
+.piece-mode .staff{flex:1;width:100%;min-height:0}
+@media(max-width:550px){.keyboard-controls{gap:4px;font-size:10px}.key-size{gap:3px}.key-size input{width:56px}.key-size output{font-size:10px}.hint-toggle{font-size:10px;gap:3px}.hint-toggle input{width:14px;height:14px}.tiny{padding:4px 6px}.piece-mode .staff{min-height:145px}.piece-mode .score-card{overflow:auto}}
