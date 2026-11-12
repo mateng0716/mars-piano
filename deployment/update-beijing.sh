@@ -45,6 +45,7 @@ rollback(){
   if [[ $activated -eq 1 ]]; then
     ln -s "$old_target" "$base/current.rollback"
     mv -Tf "$base/current.rollback" "$current"
+    systemctl restart gotomars-piano.service || true
     echo "Health check failed; restored $old_target" >&2
   fi
 }
@@ -61,6 +62,24 @@ mv -T "$staging" "$release"
 ln -s "releases/$version" "$base/current.next"
 mv -Tf "$base/current.next" "$current"
 activated=1
+
+# Backward-compatible serving layer: entry pages never use stale conditional caches.
+install -m 0644 "$release/deployment/serve.py" "$base/serve.py"
+install -d -m 0755 /etc/systemd/system/gotomars-piano.service.d
+if [[ -f /etc/systemd/system/gotomars-piano.service.d/cache.conf ]]; then
+  cp -a /etc/systemd/system/gotomars-piano.service.d/cache.conf "$base/cache.conf.before-$version"
+fi
+cat > /etc/systemd/system/gotomars-piano.service.d/cache.conf <<'UNIT'
+[Service]
+ExecStart=
+ExecStart=/usr/bin/python3 /srv/agentcloud/apps/piano/serve.py --port 19080 --bind 127.0.0.1 --directory /srv/agentcloud/apps/piano/current
+UNIT
+systemctl daemon-reload
+systemctl restart gotomars-piano.service
+for attempt in 1 2 3 4 5; do
+  if curl --fail --silent -o /dev/null http://127.0.0.1:19080/; then break; fi
+  sleep 1
+done
 
 systemctl is-active --quiet gotomars-piano.service
 curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/
