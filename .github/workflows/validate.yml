@@ -10,9 +10,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --check app.js && node --check course-data.js && node --check music-data.js && node --check lesson-visuals.js
+      - name: Validate JavaScript
+        run: |
+          for script in app.js course-data.js music-data.js lesson-visuals.js piano-input.js piano-adventure.js; do
+            node --check "$script"
+          done
+      - name: Check learning and signal behavior
+        run: node scripts/check_learning.js
       - run: |
           test -f index.html
           test -f style.css
+          test -f home-layout.css
           test -f assets/piano/steinway-splendid/README.md
           test "$(find assets/piano/steinway-splendid -name '*.m4a' | wc -l)" -eq 46
