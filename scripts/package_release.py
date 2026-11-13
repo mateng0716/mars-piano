@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'deployment' / 'releases'
 OUTPUT.mkdir(parents=True, exist_ok=True)
 commit = subprocess.check_output(['git', 'rev-parse', '--short=12', 'HEAD'], cwd=ROOT, text=True).strip()
-paths = [Path('index.html'), Path('style.css'), Path('app.js'), Path('course-data.js'), Path('music-data.js'), Path('lesson-visuals.js'), Path('version.json'), Path('manifest.webmanifest')]
+paths = [Path('index.html'), Path('style.css'), Path('home-layout.css'), Path('app.js'), Path('course-data.js'), Path('music-data.js'), Path('lesson-visuals.js'), Path('piano-input.js'), Path('piano-adventure.js'), Path('version.json'), Path('manifest.webmanifest')]
 paths += [Path('deployment/serve.py')]
 paths += [p.relative_to(ROOT) for p in sorted((ROOT / 'assets').rglob('*')) if p.is_file()]
 archive = OUTPUT / f'mars-piano-{commit}.tar.gz'
