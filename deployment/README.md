@@ -4,7 +4,11 @@
 
 ## 当前发布
 
-静态页面源提交：`c9b940b6676c`。发布包 `releases/mars-piano-c9b940b6676c.tar.gz`，SHA-256 `e2262ffec83bd9f4ea9672972216f3dc7b0aa9a21da4146c567633b219ad102d`。服务器发布目录 `/srv/agentcloud/apps/piano/releases/c9b940b6676c`；`/srv/agentcloud/apps/piano/current` 是指向它的软链接。上一版本 `fcecfe56c0d8` 保留在独立目录用于回退。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供静态文件，Caddy 反向代理该端口并管理证书。
+静态页面源提交：本地 `ee893a9f96b4`（版本标记 `studio-blue-20261113-3`）。服务器发布目录 `/srv/agentcloud/apps/piano/releases/ee893a9f96b4`，`current` 指向它；上一版 `a0c6416a5229` 保留用于回退。本次包含明亮蓝色音乐房、M 图标、六个原创启蒙发现、旋律回声、节奏小火车、电钢琴输入和一屏首页。GitHub 源码仓库为 `mateng0716/mars-piano`；CI 验证源码，实际线上版本以本段生产回执和公网校验为准。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供文件，Caddy 代理并管理证书。独立 `serve.py` 对首页、版本文件和 manifest 返回 `Cache-Control: no-store`，忽略旧入口的条件缓存请求。
+
+2026-11-12 iPad 与主屏幕更新回执：大包上传中断后改用 1.4MB 增量，增量 SHA-256 `acce4094b53e9f6f59a330c11123de9c8b297c998882f84b93ba8b980adea5fa`；服务器复用旧素材并核对全部 96 个发布文件哈希。服务器重建全量归档 SHA-256 `cd07c0369711b287d29f691e18a907ec718cc93dc72ff39e101b67802c1f6e19`，其压缩字节与本地原全包不同，但 96 文件内容相同；本地原全包 SHA-256 `b2f85229bb2f4051630d466029fa71fe748d65bd297bfea5bd239cdae364a60d`。更新脚本回报 Current `756e8c411d58`、Previous `releases/c9b940b6676c`。GitHub Actions run `43162119739` success。
+
+公网首页、4 个 JS、样式、版本 JSON、manifest、3 个图标与 C4 采样均与本地逐字节一致；携带未来 `If-Modified-Since` 的首页仍为 200/no-store，版本 JSON 为 200/no-store。线上 WebKit 768×1024、1194×834、390×844：游戏开始后隐藏导航，音符在 iPad 竖/横屏约 46/66px 宽；错误发红并留题、正确礼花，角落没有对错符号；键高 28–64% 与谱面互补，底部贴边、无横向溢出。黑键/白键宽比约 0.58，跨组 A♯→C♯ 中心间距约 1.66 个白键宽。稳定页面 46 个琴声采样解码、AudioContext running；跨尺寸快速导航时旧页面的未完成采样请求被取消，不作为当前页面加载失败。实体 iPad 主屏幕图标替换、触控与听感仍待真机验收。
 
 2026-11-11 弹音游戏更新回执：GitHub main `1008efa39b5795619fa077b96d22149f076727fc` 中 5 个改动文件与本地逐字节一致，Actions `Validate static site` run `43045482436` success。OrcaTerm 文件管理器显示归档与 `.sha256` 传输成功，服务器 `sha256sum -c` 回报 OK；更新脚本回报 Current `c9b940b6676c`、Previous `releases/fcecfe56c0d8`。公网 HTTPS 的首页、4 个 JavaScript、样式和 C4 琴声与本地发布源逐字节一致。线上 WebKit 768×1024 模拟：错音显示红色与 X、目标音不变；答对显示绿色、16 粒礼花和正确反馈，分数由 0 到 1；60 秒结束后本机记录写入 localStorage，刷新后仍在。页面横向溢出 0，AudioContext 为 running，控制台 0 错误/警告。实际 iPad 触控与主观听感仍待真机验收。
 
@@ -24,7 +28,34 @@
 
 1. 对新静态版本生成归档与 SHA-256，把归档、`.sha256` 和 `update-beijing.sh` 上传到服务器。不要重复执行首次发布脚本 `stage-beijing.sh`。
 2. 在服务器运行 `sudo bash /home/ubuntu/update-beijing.sh /home/ubuntu/mars-piano-<版本>.tar.gz`。脚本核对哈希、解压到独立版本目录并原子切换 `current`，本机健康检查失败时自动指回上一版本；不修改 Caddy 或其它站点。
-3. 继续检查 `systemctl is-active gotomars-piano.service`、本机 19080、可信公网 HTTPS、首页、曲目数据与音频。Python 静态服务读取软链接目标，无需重启；如需重启，使用 `systemctl restart gotomars-piano.service`。
+3. 继续检查 `systemctl is-active gotomars-piano.service`、本机 19080、可信公网 HTTPS、首页、曲目数据与音频。更新脚本会重启钢琴独立静态服务；如需手动重启，使用 `systemctl restart gotomars-piano.service`。
 4. 回退页面时，把 `current` 原子指回上一发布目录。回退域名入口时，先备份当前 Caddyfile，再移除仅 `piano.gotomars.me` 的站点块，`caddy validate` 后 reload；若需完整撤销本次配置，可在确认备份之后没有其它合法变更时恢复上述 Caddyfile 备份。DNS 可在阿里云控制台删除 `piano` 记录。
 
 本项目无数据库和服务端密钥。`stage-beijing.sh`、`activate-beijing.sh` 是首次发布脚本；`verify-beijing.sh` 检查服务和本机资源。上线回执及真实设备尚待验收的范围见工作区任务日志。
+
+### 2026-11-12 20:00 CST 练习体验更新
+
+生产版本 `50972098e8fe`，上一版 `756e8c411d58`。源码提交 `5097209`；本地 96 文件包 SHA-256 `581cfdc950a7fc9dc464abeb495e558f89f7e56cef4c8cc701c5b4cd38ca8b05`。复用生产采样/插画，上传 35 KB 增量后校验全部 96 文件、重建归档并执行原子更新脚本；服务器重建包 SHA-256 `d405ddd5732ead48582170240e06a87d1527557b7334921b5238ec454e613db6`，内容与本地包逐文件相同。
+
+公网首页、JS、CSS、版本与 C4 样本逐字节一致。线上 WebKit 768×1024 验证：单手一行、双手双谱号、Logo 回首页、移除导航与手型、间隔 1.5 秒后仍可正确推进第二音，游戏得分与低强调计时更新；46 采样解码，AudioContext running，无横向溢出或 pageerror。本地另验证 1194×834、390×844、五首×三种手选项、四小节试听和拖拽尺寸。实体 iPad 听感与触控仍见 Issue #2。
+
+### 2026-11-12 20:52 CST 双手谱与 C 键修复
+
+生产版本 `7ea4bbc0b293`，上一版 `50972098e8fe`。本地96文件全包SHA256 `7bf50a9803f92e66bd1e8753d93e16fe94d7c2cb5fbcf5eaae6f9c23b00d70ae`；增量包35,764字节，SHA256 `e699573a95dc98d97e59c1f27d2e5bcaecb8b46e9c6b198e6cb85f0a534558d4`。腾讯终端确认脚本和增量哈希一致，96文件验证通过；服务器重建归档SHA256 `53ca7f71ac44ba2f30a367f924d1dc2f8837f43a8e907170e365bb9a687ee94e`，更新脚本确认Current7ea4bbc0b293、Previous50972098e8fe。公网四个改动文件逐字节一致。
+
+C2–C7的六个C白键有极浅青灰底色；手别分段按钮增加谱号，删除默认绿色说明。双手保留两行谱面最低空间，SVG等比缩放；五首曲子的全四小节均检查无图形裁切，WebKit三个视口与键高28/45/64各端均完整、无横向溢出。
+
+### 2026-11-12 22:05 CST 无数值滑杆与轻触防误滚
+
+生产 `a0c6416a5229`，上一版 `7ea4bbc0b293`。增量35,917字节，SHA256 `901ee3e450757cc2a630aa545666e55c65c26d26201bdb6b3f1d8aeeb41c13ab`；发布脚本SHA256 `d3c8e4e758ab0ae0c743fb3c395d79b88bb66ffcbc80544558ef5f76f0cfb46b`。上传文件实存与哈希匹配，96文件manifest全部通过；服务器重建全包SHA256 `9dfca343c9ad2ee988cdab4360a5ab50801ae1579b8fb4a366f524bce8f46f2b`，原子切换成功。
+
+公网12个文件与本地逐字节一致；首页、index、version、manifest四项未来If-Modified-Since请求均200/no-store。公网WebKit 768×1024、1194×834、390×844及键高28/64：无数值宽度slider范围/刷新保留、双手两谱完整且等比、无溢出/pageerror；Chromium原生触摸起点scrollLeft600，18px抖动保持600、越过24px门槛时不跳、100px横拖至675、明显纵移保持600，C4显示正常。实体iPad触控听感仍需真机确认。
+
+浏览器扩展getState超时，原生Chrome可用；独立正常窗口完成发布，使用ASCII typeText避免剪贴板争用和中文路径丢失。源码同步尝试被另一个DexData任务切换焦点阻断，未上传/提交；不因此重复部署已成功版本。仅本任务新建OrcaTerm标签已关闭，保留其他任务页面。
+
+
+### 2026-11-13 蓝色音乐房整体上线
+
+生产 `ee893a9f96b4` / `studio-blue-20261113-3`，上一版 `a0c6416a5229`。本地116文件全包36,317,301字节、SHA-256 `a40996ed2e07c8db393ddf57a6e3b7d712535b99a4f5a37e74b644c8e4ac571f`；实际上传26文件增量8,289,850字节、SHA-256 `c9950952f2d128728310962a5444cbb4e6adcdef832fc4774d80044f0e2a0703`。服务器先核增量与发布脚本hash、核旧current、合并后核全部116文件，再重建归档并执行原子更新。服务器重建归档SHA-256 `d5845e22708eaec8d38e57f3e8e0581577f4a7b60a00b19f4573efc7eb75b0b2`；压缩字节不同，116文件内容一致。更新回执Current/Previous及service active已核。
+
+公网116个发布文件（标准核验113项及新增首页CSS/两个输入与活动脚本）与本地逐字节一致，四种入口的未来If-Modified-Since请求仍为200/no-store；WebKit10种视口、一屏完整文字、长进度、滚轮不滚及11个入口点击通过，页面/资源错误0。实际公网WebKit的启蒙/回声24项、节奏10项、原课程与游戏17项交互检查通过，46个钢琴采样解码且AudioContext运行；源码与CI回执见[仓库Actions](https://github.com/mateng0716/mars-piano/actions)，最终提交另记于本地任务日志。实体iPad、真琴MIDI/麦克风及家长听感未据模拟检查冒称通过。

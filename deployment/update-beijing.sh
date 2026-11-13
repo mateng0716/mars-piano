@@ -53,7 +53,7 @@ trap rollback ERR
 
 install -d -m 0755 "$staging"
 tar --no-same-owner -xzf "$archive" -C "$staging"
-for required in index.html style.css app.js course-data.js music-data.js lesson-visuals.js assets/piano/steinway-splendid/C4.m4a; do
+for required in index.html style.css home-layout.css app.js course-data.js music-data.js lesson-visuals.js piano-input.js piano-adventure.js assets/piano/steinway-splendid/C4.m4a; do
   test -f "$staging/$required"
 done
 chown -R root:root "$staging"
@@ -86,6 +86,11 @@ curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19
 curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/music-data.js
 curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/lesson-visuals.js
 curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/assets/piano/steinway-splendid/C4.m4a
+curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/piano-input.js
+curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/piano-adventure.js
+curl --fail --silent --show-error --max-time 10 -o /dev/null http://127.0.0.1:19080/home-layout.css
+grep -q 'piano-input.js' "$release/index.html"
+grep -q 'piano-adventure.js' "$release/index.html"
 grep -q 'music-data.js' "$release/index.html"
 grep -q 'lesson-visuals.js' "$release/index.html"
 trap - ERR
