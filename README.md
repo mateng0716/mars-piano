@@ -2,7 +2,7 @@
 
 为五岁孩子准备的钢琴启蒙音乐房。静态 HTML/CSS/JavaScript，无构建步骤。产品规范见 [PRODUCT.md](PRODUCT.md)，课程与陪练设计见 [LEARNING_DESIGN.md](LEARNING_DESIGN.md)。
 
-2026-11-13 明亮蓝色音乐房为**本地候选，尚未上线**；生产站点地址仍为 [piano.gotomars.me](https://piano.gotomars.me/)。
+2026-11-13 明亮蓝色音乐房已上线，版本 `studio-blue-20261113-3`（发布目录 `ee893a9f96b4`）；正式站点： [piano.gotomars.me](https://piano.gotomars.me/)。
 
 ## 本地预览
 
@@ -52,4 +52,4 @@ node scripts/check_learning.js
 
 `index.html` 依次加载现有三个数据/绘图脚本、`app.js`、`piano-input.js`、`piano-adventure.js`。`version.json` 与入口版本常量同步，主页 ↻ 可刷新；已有主屏幕入口保持 `/`。图标换新是否立即反映由 iPadOS 决定。
 
-发布、源码同步和回退按 [deployment/README.md](deployment/README.md) 执行。本轮不执行云端发布。修改前快照与 QA 证据在忽略目录 `.local/fancy-20261113/`，未清除任何原学习记录。
+发布、源码同步和回退按 [deployment/README.md](deployment/README.md) 执行。本次发布保留上一版 `a0c6416a5229` 作为回退。修改前快照与 QA 证据在忽略目录 `.local/fancy-20261113/`，未清除任何原学习记录。
