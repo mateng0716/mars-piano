@@ -1,5 +1,5 @@
 // Short sight-reading excerpts. Modern-song entries are children's teaching adaptations, not official scores.
-// Left-hand lines are new, simplified accompaniments. All five are adapted into C major for beginner reading.
+// Left-hand lines are new, simplified accompaniments. Pieces are adapted into C major for beginner reading.
 // Levels describe reading goals inspired by ABRSM Practical Piano sight-reading, not official exam-piece status.
 const note=(pitch,beats=1)=>({pitch,beats});
 const MUSIC_PIECES=[
@@ -95,6 +95,31 @@ const MUSIC_PIECES=[
         [note('C3',2),note('G3',2)],
         [note('A3',2),note('E3',2)],
         [note('C3',2),note('G3',2)]
+      ]
+    }
+  },
+  {
+    title:'永远同在',composer:'木村弓',grade:'入门 · 最简版',meter:'3/4',key:'C 大调 · 白键版',modern:true,
+    subtitle:'《千与千寻》主题曲 · 弱起 + 4 小节',
+    description:'先练右手单音旋律；左手每小节只弹一个长音。保留开头弱起，慢速试听为每分钟 80 拍。',
+    source:'https://youmi-kimura.com/cd_itsumo.html',
+    scoreReference:'https://www.musicnotes.com/sheetmusic/sheeteria/always-with-me-easy/MN0260320',
+    // One-beat pickup plus four complete bars, not the full song or a publisher's arrangement.
+    pickupBeats:1,tempo:80,
+    hands:{
+      right:[
+        [note('C5',.5),note('D5',.5)],
+        [note('E5',.5),note('C5',.5),note('G5',1.5),note('E5',.5)],
+        [note('D5'),note('G5'),note('D5')],
+        [note('C5',.5),note('A4',.5),note('E5',1.5),note('C5',.5)],
+        [note('B4',2),note('C5',.5),note('B4',.5)]
+      ],
+      left:[
+        [{rest:true,beats:1}],
+        [note('C3',3)],
+        [note('B2',3)],
+        [note('A2',3)],
+        [note('G2',3)]
       ]
     }
   }
