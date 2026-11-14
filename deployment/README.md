@@ -4,7 +4,7 @@
 
 ## 当前发布
 
-静态页面源提交：本地 `ee893a9f96b4`（版本标记 `studio-blue-20261113-3`）。服务器发布目录 `/srv/agentcloud/apps/piano/releases/ee893a9f96b4`，`current` 指向它；上一版 `a0c6416a5229` 保留用于回退。本次包含明亮蓝色音乐房、M 图标、六个原创启蒙发现、旋律回声、节奏小火车、电钢琴输入和一屏首页。GitHub 源码仓库为 `mateng0716/mars-piano`；CI 验证源码，实际线上版本以本段生产回执和公网校验为准。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供文件，Caddy 代理并管理证书。独立 `serve.py` 对首页、版本文件和 manifest 返回 `Cache-Control: no-store`，忽略旧入口的条件缓存请求。
+静态页面源提交：本地 `03d10a143f7c`（版本标记 `always-with-me-20261114-1`），GitHub 对应源码提交 `207ee003a83b9bfdebb66167aaebeb087ca5615e`，两者完整文件树相同，Actions `Validate static site` run `43590980129` success。服务器发布目录 `/srv/agentcloud/apps/piano/releases/03d10a143f7c`，`current` 指向它；上一版 `ee893a9f96b4` 保留用于回退。本次新增《千与千寻》主题曲《永远同在》C 大调入门短句（弱起 + 开头四小节）、80 BPM 试听、简易单音左手，以及离开/后台时休止推进的恢复处理。现有蓝色音乐房、课程和其他曲目保留。`gotomars-piano.service` 以 `www-data` 身份在 `127.0.0.1:19080` 提供文件，Caddy 代理并管理证书。独立 `serve.py` 对首页、版本文件和 manifest 返回 `Cache-Control: no-store`，忽略旧入口的条件缓存请求。
 
 2026-11-12 iPad 与主屏幕更新回执：大包上传中断后改用 1.4MB 增量，增量 SHA-256 `acce4094b53e9f6f59a330c11123de9c8b297c998882f84b93ba8b980adea5fa`；服务器复用旧素材并核对全部 96 个发布文件哈希。服务器重建全量归档 SHA-256 `cd07c0369711b287d29f691e18a907ec718cc93dc72ff39e101b67802c1f6e19`，其压缩字节与本地原全包不同，但 96 文件内容相同；本地原全包 SHA-256 `b2f85229bb2f4051630d466029fa71fe748d65bd297bfea5bd239cdae364a60d`。更新脚本回报 Current `756e8c411d58`、Previous `releases/c9b940b6676c`。GitHub Actions run `43162119739` success。
 
@@ -59,3 +59,12 @@ C2–C7的六个C白键有极浅青灰底色；手别分段按钮增加谱号，
 生产 `ee893a9f96b4` / `studio-blue-20261113-3`，上一版 `a0c6416a5229`。本地116文件全包36,317,301字节、SHA-256 `a40996ed2e07c8db393ddf57a6e3b7d712535b99a4f5a37e74b644c8e4ac571f`；实际上传26文件增量8,289,850字节、SHA-256 `c9950952f2d128728310962a5444cbb4e6adcdef832fc4774d80044f0e2a0703`。服务器先核增量与发布脚本hash、核旧current、合并后核全部116文件，再重建归档并执行原子更新。服务器重建归档SHA-256 `d5845e22708eaec8d38e57f3e8e0581577f4a7b60a00b19f4573efc7eb75b0b2`；压缩字节不同，116文件内容一致。更新回执Current/Previous及service active已核。
 
 公网116个发布文件（标准核验113项及新增首页CSS/两个输入与活动脚本）与本地逐字节一致，四种入口的未来If-Modified-Since请求仍为200/no-store；WebKit10种视口、一屏完整文字、长进度、滚轮不滚及11个入口点击通过，页面/资源错误0。实际公网WebKit的启蒙/回声24项、节奏10项、原课程与游戏17项交互检查通过，46个钢琴采样解码且AudioContext运行；源码与CI回执见[仓库Actions](https://github.com/mateng0716/mars-piano/actions)，最终提交另记于本地任务日志。实体iPad、真琴MIDI/麦克风及家长听感未据模拟检查冒称通过。
+
+
+### 2026-11-14《永远同在》C 调入门版
+
+生产 `03d10a143f7c` / `always-with-me-20261114-1`，上一版 `ee893a9f96b4`。本地 116 文件全包 SHA-256 `3ab6985992c59e9f5cda3e5ea04aa8dd388e94f4b09704ef22b6ca87a12d7025`；上传四文件增量 31,379 字节、SHA-256 `73a6d3a8558018600f34bea4df5b795d747d2f693ea83fbc12318e3f479c833f`，发布脚本 SHA-256 `52c7b1379cb5384083003d5e164cc2f510b03396aa7eb61a839892a16ee05b85`。服务器两件文件 hash 与本地一致，合并后 116 文件 manifest 全部通过，再重建归档并原子切换。服务器重建包 SHA-256 `893810805451f67cd3f469927a8ba440c287bdb565dedf2188f4bee0a09a868a`；压缩字节不同，文件内容与本地相同。回执 Current/Previous/service active 已核。
+
+公网 116 个发布文件与本地逐字节一致，首页、index、version、manifest 四项条件缓存请求均为 200/no-store。实际公网 headless WebKit 的新曲跟弹 57 项通过：右手 16 音、左手四个长音、双手顺序练习、错音留题、慢弹和完成卡切手；三种手别试听的音高、80 BPM、一拍弱起、采样、停止/切手/回首页恢复检查通过。此为浏览器验证；实体 iPad 触控、真琴 MIDI/麦克风与亲子听感仍待真机体验。
+
+公网试听共 19 项检查通过，三个视口（1194×834、768×1024、390×844）共 9 个手别场景与 14 项布局检查通过：谱面完整、等比、无页面横向溢出；46 个采样解码且 AudioContext running，页面错误 0。
